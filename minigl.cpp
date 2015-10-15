@@ -6,6 +6,7 @@
  */
 
 #include <cstdio>
+#include <vector>
 #include <cstdlib>
 #include <string>
 #include <iostream>
@@ -13,9 +14,30 @@
 
 using namespace std;
 
+class Vertex3{
+    
+    public:
+    float x;
+    float y;
+    float z;
+
+    Vertex3(){
+        x = 0;
+        y = 0;
+        z = 0;
+    }
+    Vertex3(float a, float b, float c){
+        x = a;
+        y = b;
+        z = c;
+    }
+};
+
+
 //variables
 MGLpoly_mode mgl_mode; //triangles or squares?
 bool isDrawing;
+vector <Vertex3> points_array; 
 
 
 
@@ -45,7 +67,7 @@ void mglReadPixels(MGLsize width,
                    MGLsize height,
                    MGLpixel *data)
 {
-
+    
         
 
 }
@@ -56,7 +78,7 @@ void mglReadPixels(MGLsize width,
  */
 void mglBegin(MGLpoly_mode mode)
 {
-     
+    isDrawing = true;
 	//if mode is triangle set current mode to triangle
 	if(mode ==  MGL_TRIANGLES) 
         mgl_mode == MGL_TRIANGLES;
@@ -75,8 +97,7 @@ void mglBegin(MGLpoly_mode mode)
  */
 void mglEnd()
 {
-
-    
+    isDrawing = false;
 }
 
 /**
@@ -98,6 +119,9 @@ void mglVertex3(MGLfloat x,
                 MGLfloat y,
                 MGLfloat z)
 {
+    Vertex3 vertex (x,y,z);
+    points_array.push_back(vertex);
+    
 }
 
 /**
