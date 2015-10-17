@@ -38,7 +38,6 @@ typedef enum {
 
 
 
-
 /**
  * Read pixel data starting with the pixel at coordinates
  * (0, 0), up to (width,  height), into the array

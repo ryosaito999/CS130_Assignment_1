@@ -14,6 +14,7 @@
 
 using namespace std;
 
+
 class Vertex3{
     
     public:
@@ -33,14 +34,54 @@ class Vertex3{
     }
 };
 
+class RGB{
+
+public:
+   int R;
+   int G;
+   int B;
+
+    
+   RGB(){
+    R=0;
+    G=0;
+    B=0;
+   } 
+   
+    RGB(int r, int g, int b){
+    R=r;
+    G=g;
+    B=b;
+   } 
+   
+};
+
+
+
 
 //variables
 MGLpoly_mode mgl_mode; //triangles or squares?
 bool isDrawing;
 vector <Vertex3> points_array; 
 
+MGLpixel MGL_SCREEN_WIDTH = 320;
+MGLpixel MGL_SCREEN_HEIGHT = 240;
+MGLpixel framebuffer[320][240];
 
+RGB current_color(255,255,255);//white color
 
+//HELPER FUNCTIONS
+/** 
+    set pixel (x,y) to RGB color on frame buffer to draw 
+  */ 
+void plot(unsigned int x, unsigned int y, RGB coloring) 
+ { 
+ 	MGLpixel color = 0; 
+ 	MGL_SET_RED(color, coloring.R); 
+ 	MGL_SET_GREEN(color, coloring.G); 
+ 	MGL_SET_BLUE(color, coloring.B); 
+ 	framebuffer[x][y] = color; //draw everything queued up on buffer
+}  
 
 /**
  * Standard macro to report errors
@@ -67,9 +108,12 @@ void mglReadPixels(MGLsize width,
                    MGLsize height,
                    MGLpixel *data)
 {
+    plot(20,20, current_color);
     
-        
-
+    
+	for(unsigned x = 0; x < width; x++) 
+ 		for(unsigned y = 0; y < height; ++y) 
+ 			data[y*width+x] = framebuffer[x][y]; 
 }
 
 /**
