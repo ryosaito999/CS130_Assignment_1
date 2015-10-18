@@ -156,14 +156,11 @@ void draw_line(int x0, int y0, int x1, int y1)
     float dy = y1 - y0;
     float yNext = y0;
     float xNext = x0;
-
     //vertical line
     if( dx == 0){
         for(int y = y0; y < y1; ++y)
             set_pixel(x0, y, white_color );
     }
-    
-    
     float m = dy/dx;
 
     // Right Side
@@ -214,10 +211,8 @@ void draw_line(int x0, int y0, int x1, int y1)
                 }
             }            
         }
-        
         //quad III
         // m > 1
-
         if( dy < 0){
             if( m > 1 ){
                 cout << "???";
@@ -305,10 +300,35 @@ void plotLines(){
 
 
 
+  }
+
+  if( mgl_mode == MGL_QUADS){
+      int x1 = points_array[0].x;
+      int y1 = points_array[0].y;
+      int z1 = points_array[0].z;
+
+      int x2 = points_array[1].x;
+      int y2 = points_array[1].y;
+      int z2 = points_array[1].z;
+
+      int x3 = points_array[2].x;
+      int y3 = points_array[2].y;
+      int z3 = points_array[2].z;
+      
+      int x4 = points_array[3].x;
+      int y4 = points_array[3].y;
+      int z4 = points_array[3].z;
+
+      draw_line(x1,y1,x2,y2);
+      draw_line(x2,y2,x3,y3);
+      draw_line(x3,y3,x4,y4);
+      draw_line(x4,y4,x1,y1);
     }
+
+}
+
     //next plot connect each point to make lines
     //currently own collection of vectors -> need to perform matrix multiplaction one each
-}
 
 
 
@@ -397,7 +417,7 @@ void mglVertex3(MGLfloat x,
                 MGLfloat y,
                 MGLfloat z)
 {
-
+    cout << "x: " << x* MGL_SCREEN_WIDTH<< ", y: " << y * MGL_SCREEN_HEIGHT << endl;
     Vertex3 vertex (x* MGL_SCREEN_WIDTH ,y * MGL_SCREEN_HEIGHT ,z);
     points_array.push_back(vertex);
 
