@@ -7,6 +7,7 @@
 
 #include <cstdio>
 #include <vector>
+#include <cmath>
 #include <cstdlib>
 #include <string>
 #include <iostream>
@@ -228,12 +229,39 @@ void draw_line(int x0, int y0, int x1, int y1)
         } 
         
     }
-    
-
-    
-          
     return;
 }
+
+
+//from  http://www.geeksforgeeks.org/check-whether-a-given-point-lies-inside-a-triangle-or-not/
+/* A utility function to calculate area of triangle formed by (x1, y1), 
+   (x2, y2) and (x3, y3) */
+
+double area(int x1, int y1, int x2, int y2, int x3, int y3)
+{
+   return abs((x1*(y2-y3) + x2*(y3-y1)+ x3*(y1-y2))/2.0);
+}
+
+/* A function to check whether point P(x, y) lies inside the triangle formed 
+   by A(x1, y1), B(x2, y2) and C(x3, y3) */
+bool isInsideTri(int x1, int y1, int x2, int y2, int x3, int y3, int x, int y)
+{   
+   /* Calculate area of triangle ABC */
+   float A = area (x1, y1, x2, y2, x3, y3);
+ 
+   /* Calculate area of triangle PBC */  
+   float A1 = area (x, y, x2, y2, x3, y3);
+ 
+   /* Calculate area of triangle PAC */  
+   float A2 = area (x1, y1, x, y, x3, y3);
+ 
+   /* Calculate area of triangle PAB */   
+   float A3 = area (x1, y1, x2, y2, x, y);
+   
+   /* Check if sum of A1, A2 and A3 is same as A */
+   return (A == A1 + A2 + A3);
+}
+
 
 
 
@@ -263,6 +291,18 @@ void plotLines(){
       draw_line(x1,y1,x2,y2);
       draw_line(x2,y2,x3,y3);
       draw_line(x3,y3,x1,y1);
+
+
+      //next shade in triangle!
+      //check baycentric coordinates
+      for(unsigned x = 0; x < MGL_SCREEN_WIDTH; x++) {
+        for(unsigned y = 0; y < MGL_SCREEN_HEIGHT; ++y) {
+          if( isInsideTri(x1,y1,x2,y2,x3,y3,x,y) )
+            set_pixel(x,y,white_color);
+
+      }
+    }
+
 
 
     }
