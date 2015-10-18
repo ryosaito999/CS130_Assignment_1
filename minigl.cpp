@@ -138,7 +138,7 @@ float slope(int x, int y, int x2, int y2){
 /** 
     set pixel (x,y) to RGB color on frame buffer to draw 
   */ 
-void plot(unsigned int x, unsigned int y, RGB coloring) 
+void set_pixel(unsigned int x, unsigned int y, RGB coloring) 
 { 
  	MGLpixel color = 0; 
  	MGL_SET_RED(color, coloring.R); 
@@ -146,23 +146,128 @@ void plot(unsigned int x, unsigned int y, RGB coloring)
  	MGL_SET_BLUE(color, coloring.B); 
   framebuffer[x][y] = color; //draw everything queued up on buffer
 }  
-/* Convert given x,y to screen coordinates to make point visible*/
-void convertScreen_plot(unsigned int x, unsigned int y, RGB coloring){
-  
-  //scale points first
-  plot( x,y, coloring);
-  Matrix4 m;
+
+
+void draw_line(int x0, int y0, int x1, int y1)
+{
+    //NOT WORKING CODE(PUT BETTER CODE HERE!!)
+    float dx = x1 - x0;
+    float dy = y1 - y0;
+    float yNext = y0;
+    float xNext = x0;
+
+    //vertical line
+    if( dx == 0){
+        for(int y = y0; y < y1; ++y)
+            set_pixel(x0, y, white_color );
+    }
+    
+    
+    float m = dy/dx;
+
+    // Right Side
+    if( dx > 0 )   {
+        //quad I, m <= 1
+        //quad IV, m >= -1
+        if(  m <=  1 && m >= -1  ){
+            for(int x = x0; x < x1; ++x){
+                set_pixel(x, yNext,white_color );
+                yNext = yNext + m; // dda algotithm y_k+1 = yk + m for every x incriment
+            }
+        }
+        //quad I, m > 1
+        if( m > 1 ){
+            for(int y = y0; y < y1; ++y){
+                set_pixel(xNext, y,white_color );
+                xNext = xNext + 1/m;
+            }
+        }
+        //quad IV m < 1
+        if( m < 1){
+            for(int y = y0; y > y1; --y){
+                set_pixel(xNext, y ,white_color);
+                xNext = xNext - 1/m;
+            }
+        }
+        
+    }
+    
+    //left side
+    if( dx < 0){
+        //quad II , quad III
+        //   m > -1
+        if(  m >= -1  ){
+            for(int x = x0; x > x1; --x){
+                set_pixel(x, yNext,white_color );
+                yNext = yNext - m; // dda algotithm y_k+1 = yk + m for every x incriment
+            }
+        }
+        
+        //quad II 
+        // m < -1
+        if( dy > 0){
+            if( m < -1 ){
+                for(int y = y0; y < y1; ++y){
+                    set_pixel(xNext, y,white_color );
+                    xNext = xNext + 1/m;
+                }
+            }            
+        }
+        
+        //quad III
+        // m > 1
+
+        if( dy < 0){
+            if( m > 1 ){
+                cout << "???";
+                for(int y = y0; y > y1; --y){
+                    set_pixel(xNext, y,white_color );
+                    xNext = xNext - 1/m;
+                }
+            }            
+        } 
+        
+    }
+    
+
+    
+          
+    return;
 }
+
+
 
 void plotLines(){
     
     for (int i=0; i < points_array.size(); ++i){
       //must multiply coordinates by sceenheight , screenwidth to scale properly
-      points_array[i].x = points_array[i].x * MGL_SCREEN_WIDTH; 
-      points_array[i].y = points_array[i].y * MGL_SCREEN_HEIGHT;
-      plot( points_array[i].x,points_array[i].y, white_color);
+      //plot points for now -> delete later
+      set_pixel( points_array[i].x,points_array[i].y, white_color);
 
     }
+
+    if( mgl_mode == MGL_TRIANGLES){
+
+      int x1 = points_array[0].x;
+      int y1 = points_array[0].y;
+      int z1 = points_array[0].z;
+
+      int x2 = points_array[1].x;
+      int y2 = points_array[1].y;
+      int z2 = points_array[1].z;
+
+      int x3 = points_array[2].x;
+      int y3 = points_array[2].y;
+      int z3 = points_array[2].z;
+
+      draw_line(x1,y1,x2,y2);
+      draw_line(x2,y2,x3,y3);
+      draw_line(x3,y3,x1,y1);
+
+
+    }
+    //next plot connect each point to make lines
+    //currently own collection of vectors -> need to perform matrix multiplaction one each
 }
 
 
@@ -239,7 +344,7 @@ void mglVertex2(MGLfloat x,
                 MGLfloat y)
 {
 
-    Vertex3 vertex (x,y,0);
+    Vertex3 vertex (x* MGL_SCREEN_WIDTH ,y * MGL_SCREEN_HEIGHT ,0);
     points_array.push_back(vertex);
 
 }
@@ -252,7 +357,8 @@ void mglVertex3(MGLfloat x,
                 MGLfloat y,
                 MGLfloat z)
 {
-    Vertex3 vertex (x,y,z);
+
+    Vertex3 vertex (x* MGL_SCREEN_WIDTH ,y * MGL_SCREEN_HEIGHT ,z);
     points_array.push_back(vertex);
 
 }
