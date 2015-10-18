@@ -125,10 +125,17 @@ vector <Vertex3> points_array;
 
 MGLpixel MGL_SCREEN_WIDTH = 320;
 MGLpixel MGL_SCREEN_HEIGHT = 240;
+MGLpixel resolution = MGL_SCREEN_WIDTH/MGL_SCREEN_HEIGHT;
 MGLpixel framebuffer[320][240];
 RGB white_color(255,255,255);//white color
 
 //HELPER FUNCTIONS
+
+float slope(int x, int y, int x2, int y2){
+
+  return (y2 - y)/(x2-x);
+}
+
 /** 
     set pixel (x,y) to RGB color on frame buffer to draw 
   */ 
@@ -138,21 +145,30 @@ void plot(unsigned int x, unsigned int y, RGB coloring)
  	MGL_SET_RED(color, coloring.R); 
  	MGL_SET_GREEN(color, coloring.G); 
  	MGL_SET_BLUE(color, coloring.B); 
-    framebuffer[x][y] = color; //draw everything queued up on buffer
+  framebuffer[x][y] = color; //draw everything queued up on buffer
 }  
 /* Convert given x,y to screen coordinates to make point visible*/
 void convertScreen_plot(unsigned int x, unsigned int y, RGB coloring){
+  
+
+
   plot( x,y, coloring);
   Matrix4 m;
+
+
 }
 
 void plotLines( ){
     
     for (int i=0; i < points_array.size(); ++i){
       //need to traslate 
-      convertScreen_plot(points_array[i].x, points_array[i].y, white_color);
+      //must multiply coordinates by sceenheight , screenwidth
+      convertScreen_plot(points_array[i].x * MGL_SCREEN_WIDTH, points_array[i].y * MGL_SCREEN_HEIGHT, white_color);
     }
 }
+
+
+
 
 /**
  * Standard macro to report errors
@@ -181,7 +197,6 @@ void mglReadPixels(MGLsize width,
 {
  
   plotLines();
-  plot(20,20, white_color);
 	for(unsigned x = 0; x < width; x++) 
  		for(unsigned y = 0; y < height; ++y) 
  			data[y*width+x] = framebuffer[x][y]; 
@@ -257,6 +272,7 @@ void mglMatrixMode(MGLmatrix_mode mode)
  */
 void mglPushMatrix()
 {
+
 }
 
 /**
@@ -272,6 +288,14 @@ void mglPopMatrix()
  */
 void mglLoadIdentity()
 {
+  Matrix4 identityMatrix;
+  identityMatrix[0][0] = 1;
+  identityMatrix[1][1] = 1;
+  identityMatrix[2][2] = 1;
+  identityMatrix[3][3] = 1;
+
+
+
 }
 
 /**
