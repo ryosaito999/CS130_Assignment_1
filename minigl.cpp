@@ -13,8 +13,6 @@
 #include "minigl.h"
 
 using namespace std;
-
-
 class Vertex3{
     
     public:
@@ -34,6 +32,43 @@ class Vertex3{
     }
 };
 
+//not sure what to use this for??
+class Vertex4{
+
+    public:
+    float x;
+    float y;
+    float z;
+    float w;
+
+    Vertex4(){
+        x = 0;
+        y = 0;
+        z = 0;
+        w=0;
+    }
+    Vertex4(float a, float b, float c){
+        x = a;
+        y = b;
+        z = c;
+        w = 1;
+    }
+
+    Vertex4(float a, float b, float c, float d){
+      x = a;
+      y = b;
+      z = c;
+      w = d;
+    }
+
+    //convert vertex3 -> vertex4
+    Vertex4(Vertex3 v , float n){
+        x = v.x;
+        y = v.y;
+        z = v.z;
+        w = n;
+    }
+};
 class RGB{
 
 public:
@@ -42,22 +77,46 @@ public:
    int B;
 
     
-   RGB(){
-    R=0;
-    G=0;
-    B=0;
+ RGB(){
+      R=0;
+      G=0;
+      B=0;
    } 
    
-    RGB(int r, int g, int b){
-    R=r;
-    G=g;
-    B=b;
+  RGB(int r, int g, int b){
+      R=r;
+      G=g;
+      B=b;
    } 
    
 };
 
+class Matrix4 {
+public:
+  
+  float matrix4[4][4];
+  
+  //creates matrix row by row filled with 0's
+  Matrix4(){
+    for(int y=0; y< 4; ++y)
+      for(int x= 0 ; x <4 ; ++x){
+        matrix4[x][y] = 0 ;
+      }
 
+      print_matrix();
+  }
 
+  void print_matrix(){ 
+    for(int y=0; y< 4; ++y){
+      cout <<  endl;
+      for(int x= 0 ; x <4 ; ++x){
+        cout << matrix4[x][y] << "    ";
+      }
+    }
+
+    cout << "printed" << endl;
+  }
+};
 
 //variables
 MGLpoly_mode mgl_mode; //triangles or squares?
@@ -67,8 +126,7 @@ vector <Vertex3> points_array;
 MGLpixel MGL_SCREEN_WIDTH = 320;
 MGLpixel MGL_SCREEN_HEIGHT = 240;
 MGLpixel framebuffer[320][240];
-
-RGB current_color(255,255,255);//white color
+RGB white_color(255,255,255);//white color
 
 //HELPER FUNCTIONS
 /** 
@@ -80,8 +138,21 @@ void plot(unsigned int x, unsigned int y, RGB coloring)
  	MGL_SET_RED(color, coloring.R); 
  	MGL_SET_GREEN(color, coloring.G); 
  	MGL_SET_BLUE(color, coloring.B); 
- 	framebuffer[x][y] = color; //draw everything queued up on buffer
+    framebuffer[x][y] = color; //draw everything queued up on buffer
 }  
+/* Convert given x,y to screen coordinates to make point visible*/
+void convertScreen_plot(unsigned int x, unsigned int y, RGB coloring){
+  plot( x,y, coloring);
+  Matrix4 m;
+}
+
+void plotLines( ){
+    
+    for (int i=0; i < points_array.size(); ++i){
+      //need to traslate 
+      convertScreen_plot(points_array[i].x, points_array[i].y, white_color);
+    }
+}
 
 /**
  * Standard macro to report errors
@@ -108,9 +179,9 @@ void mglReadPixels(MGLsize width,
                    MGLsize height,
                    MGLpixel *data)
 {
-    plot(20,20, current_color);
-    
-    
+ 
+  plotLines();
+  plot(20,20, white_color);
 	for(unsigned x = 0; x < width; x++) 
  		for(unsigned y = 0; y < height; ++y) 
  			data[y*width+x] = framebuffer[x][y]; 
@@ -141,6 +212,7 @@ void mglBegin(MGLpoly_mode mode)
  */
 void mglEnd()
 {
+    cout << points_array.size() << endl;
     isDrawing = false;
 }
 
@@ -153,6 +225,10 @@ void mglEnd()
 void mglVertex2(MGLfloat x,
                 MGLfloat y)
 {
+
+    Vertex3 vertex (x,y,0);
+    points_array.push_back(vertex);
+
 }
 
 /**
@@ -165,7 +241,7 @@ void mglVertex3(MGLfloat x,
 {
     Vertex3 vertex (x,y,z);
     points_array.push_back(vertex);
-    
+
 }
 
 /**
