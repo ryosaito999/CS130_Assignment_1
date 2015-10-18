@@ -132,7 +132,6 @@ RGB white_color(255,255,255);//white color
 //HELPER FUNCTIONS
 
 float slope(int x, int y, int x2, int y2){
-
   return (y2 - y)/(x2-x);
 }
 
@@ -140,7 +139,7 @@ float slope(int x, int y, int x2, int y2){
     set pixel (x,y) to RGB color on frame buffer to draw 
   */ 
 void plot(unsigned int x, unsigned int y, RGB coloring) 
- { 
+{ 
  	MGLpixel color = 0; 
  	MGL_SET_RED(color, coloring.R); 
  	MGL_SET_GREEN(color, coloring.G); 
@@ -150,20 +149,19 @@ void plot(unsigned int x, unsigned int y, RGB coloring)
 /* Convert given x,y to screen coordinates to make point visible*/
 void convertScreen_plot(unsigned int x, unsigned int y, RGB coloring){
   
-
-
+  //scale points first
   plot( x,y, coloring);
   Matrix4 m;
-
-
 }
 
-void plotLines( ){
+void plotLines(){
     
     for (int i=0; i < points_array.size(); ++i){
-      //need to traslate 
-      //must multiply coordinates by sceenheight , screenwidth
-      convertScreen_plot(points_array[i].x * MGL_SCREEN_WIDTH, points_array[i].y * MGL_SCREEN_HEIGHT, white_color);
+      //must multiply coordinates by sceenheight , screenwidth to scale properly
+      points_array[i].x = points_array[i].x * MGL_SCREEN_WIDTH; 
+      points_array[i].y = points_array[i].y * MGL_SCREEN_HEIGHT;
+      plot( points_array[i].x,points_array[i].y, white_color);
+
     }
 }
 
@@ -288,11 +286,11 @@ void mglPopMatrix()
  */
 void mglLoadIdentity()
 {
-  Matrix4 identityMatrix;
-  identityMatrix[0][0] = 1;
-  identityMatrix[1][1] = 1;
-  identityMatrix[2][2] = 1;
-  identityMatrix[3][3] = 1;
+  // Matrix4 identityMatrix;
+  // identityMatrix[0][0] = 1;
+  // identityMatrix[1][1] = 1;
+  // identityMatrix[2][2] = 1;
+  // identityMatrix[3][3] = 1;
 
 
 
