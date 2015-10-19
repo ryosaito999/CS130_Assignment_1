@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <vector>
 #include <cmath>
+ #include <stack>
 #include <cstdlib>
 #include <string>
 #include <iostream>
@@ -104,8 +105,32 @@ public:
         matrix4[x][y] = 0 ;
       }
 
-      print_matrix();
   }
+
+  Matrix4 operator=(const Matrix4 &m){
+    for(int i = 0; i < 4;i++)
+      for(int j = 0; j < 4; j++)
+        matrix4[i][j] = m.matrix4[i][j];
+    
+    return *this;
+  }
+  
+  // taken from https://msdn.microsoft.com/en-us/library/hh873134.aspx
+  Matrix4 operator*(Matrix4 m){ 
+    MGLfloat s;
+    Matrix4 temp;
+    for (int i=0;i<4;i++)
+      for (int j=0;j<4;j++){
+        s=0;
+        for (int e=0;e<4;e++)
+          s+=matrix4[i][e]* m.matrix4[e][j];
+        
+        temp.matrix4[i][j]=s;
+      }
+
+   return temp;
+ }
+
 
   void print_matrix(){ 
     for(int y=0; y< 4; ++y){
@@ -129,6 +154,9 @@ MGLpixel MGL_SCREEN_HEIGHT = 240;
 MGLpixel resolution = MGL_SCREEN_WIDTH/MGL_SCREEN_HEIGHT;
 MGLpixel framebuffer[320][240];
 RGB white_color(255,255,255);//white color
+
+stack <Matrix4> m_stack;
+Matrix4 currentMatrix;
 
 //HELPER FUNCTIONS
 
@@ -262,6 +290,42 @@ bool isInsideTri(int x1, int y1, int x2, int y2, int x3, int y3, int x, int y)
 
 void plotLines(){
     
+
+    for (int i=0; i < points_array.size(); ++i){
+      //must multiply coordinates by sceenheight , screenwidth to scale properly
+      //plot points for now -> delete later
+      set_pixel( points_array[i].x,points_array[i].y, white_color);
+
+    }
+    if( mgl_mode == MGL_TRIANGLES){
+
+      int x1 = points_array[0].x;
+      int y1 = points_array[0].y;
+      int z1 = points_array[0].z;
+
+      int x2 = points_array[1].x;
+      int y2 = points_array[1].y;
+      int z2 = points_array[1].z;
+
+      int x3 = points_array[2].x;
+      int y3 = points_array[2].y;
+      int z3 = points_array[2].z;
+
+      draw_line(x1,y1,x2,y2);
+      draw_line(x2,y2,x3,y3);
+      draw_line(x3,y3,x1,y1);
+
+
+      //next shade in triangle!
+      //check baycentric coordinates
+      for(unsigned x = 0; x < MGL_SCREEN_WIDTH; x++) {
+        for(unsigned y = 0; y < MGL_SCREEN_HEIGHT; ++y) {
+          if( isInsideTri(x1,y1,x2,y2,x3,y3,x,y) )
+            set_pixel(x,y,white_color);
+
+            }
+        }
+    }   
     for (int i=0; i < points_array.size(); ++i){
       //must multiply coordinates by sceenheight , screenwidth to scale properly
       //plot points for now -> delete later
@@ -360,6 +424,7 @@ void mglReadPixels(MGLsize width,
 {
  
   plotLines();
+
 	for(unsigned x = 0; x < width; x++) 
  		for(unsigned y = 0; y < height; ++y) 
  			data[y*width+x] = framebuffer[x][y]; 
@@ -394,6 +459,49 @@ void mglEnd()
     isDrawing = false;
 }
 
+//load projection matrix and multiply vertex to scale it
+// void projectionMatrix(x,y,z){
+
+
+// }
+
+Vertex3 convert_to_screen(MGLfloat x, MGLfloat y, MGLfloat z){
+
+  //Create a 4x4 matrix with the point coordinates
+  Matrix4 tmp;
+  tmp.matrix4[0][3] = x;
+  tmp.matrix4[1][3] = y;
+  tmp.matrix4[2][3] = z;
+  tmp.matrix4[3][3] = 1;
+
+  //Scale screen to 0,0 -> 2,2
+  Matrix4 scaler;
+  scaler.matrix4[0][0] = MGL_SCREEN_WIDTH/2; 
+  scaler.matrix4[1][1] = MGL_SCREEN_HEIGHT/2;
+  scaler.matrix4[2][2] = 1; 
+  scaler.matrix4[3][3] = 1;
+  
+
+  //Load matrix that translate screen up 1 right 1
+  Matrix4 translater;
+  translater.matrix4[0][0] = 1;
+  translater.matrix4[1][1] = 1;
+  translater.matrix4[2][2] = 1;
+  translater.matrix4[3][3] = 1;
+  translater.matrix4[0][3] = 1;
+  translater.matrix4[1][3] = 1;
+  translater.matrix4[2][3] = 1;
+  translater.matrix4[3][3] = 1;
+
+
+  tmp = translater * tmp;
+  tmp = scaler * tmp;
+  tmp.print_matrix();
+  return Vertex3( tmp.matrix4[0][3] , tmp.matrix4[1][3], tmp.matrix4[2][3]);
+
+}
+
+
 /**
  * Specify a two-dimensional vertex; the x- and y-coordinates
  * are explicitly specified, while the z-coordinate is assumed
@@ -403,11 +511,15 @@ void mglEnd()
 void mglVertex2(MGLfloat x,
                 MGLfloat y)
 {
+    //need to convert coordinates to orthographic 
+    cout << "x: " << x<< ", y: " << y  << endl;
+    Vertex3 vertex = convert_to_screen( x , y, 0);
 
-    Vertex3 vertex (x* MGL_SCREEN_WIDTH ,y * MGL_SCREEN_HEIGHT ,0);
+    //Vertex3 vertex (x ,y ,0);
     points_array.push_back(vertex);
 
 }
+
 
 /**
  * Specify a three-dimensional vertex.  Must appear between
@@ -417,8 +529,11 @@ void mglVertex3(MGLfloat x,
                 MGLfloat y,
                 MGLfloat z)
 {
-    cout << "x: " << x* MGL_SCREEN_WIDTH<< ", y: " << y * MGL_SCREEN_HEIGHT << endl;
-    Vertex3 vertex (x* MGL_SCREEN_WIDTH ,y * MGL_SCREEN_HEIGHT ,z);
+
+    cout << "x: " << x<< ", y: " << y  << endl;
+    Vertex3 vertex = convert_to_screen( x , y, z);
+
+    //Vertex3 vertex (x ,y ,0);
     points_array.push_back(vertex);
 
 }
@@ -437,6 +552,8 @@ void mglMatrixMode(MGLmatrix_mode mode)
 void mglPushMatrix()
 {
 
+
+
 }
 
 /**
@@ -452,11 +569,11 @@ void mglPopMatrix()
  */
 void mglLoadIdentity()
 {
-  // Matrix4 identityMatrix;
-  // identityMatrix[0][0] = 1;
-  // identityMatrix[1][1] = 1;
-  // identityMatrix[2][2] = 1;
-  // identityMatrix[3][3] = 1;
+   Matrix4 identityMatrix;
+   identityMatrix.matrix4[0][0] = 1;
+   identityMatrix.matrix4[1][1] = 1;
+   identityMatrix.matrix4[2][2] = 1;
+   identityMatrix.matrix4[3][3] = 1;
 
 
 
@@ -476,6 +593,11 @@ void mglLoadIdentity()
  */
 void mglLoadMatrix(const MGLfloat *matrix)
 {
+   Matrix4 identityMatrix;
+   identityMatrix.matrix4[0][0] = 1;
+   identityMatrix.matrix4[1][1] = 1;
+   identityMatrix.matrix4[2][2] = 1;
+   identityMatrix.matrix4[3][3] = 1;
 }
 
 /**
@@ -550,6 +672,9 @@ void mglOrtho(MGLfloat left,
               MGLfloat near,
               MGLfloat far)
 {
+
+
+
 }
 
 /**

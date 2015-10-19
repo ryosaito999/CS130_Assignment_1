@@ -1,6 +1,6 @@
 CXX       = g++
-CXXFLAGS  = -g -O2 -Wall -c
-LDFLAGS   = -g -O2 -Wall -L/usr/X11R6/lib -lGL -lglut
+CXXFLAGS  = -g  -Wall -c
+LDFLAGS   = -g  -Wall -L/usr/X11R6/lib -lGL -lglut
 RM        = rm -f
 EXEC      = minigl
 
