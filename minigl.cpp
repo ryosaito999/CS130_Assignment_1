@@ -154,7 +154,6 @@ MGLpixel MGL_SCREEN_WIDTH = 320;
 MGLpixel MGL_SCREEN_HEIGHT = 240;
 MGLpixel resolution = MGL_SCREEN_WIDTH/MGL_SCREEN_HEIGHT;
 MGLpixel framebuffer[320][240];
-RGB white_color(255,255,255);//white color
 RGB current_color;
 
 string stack_status;
@@ -195,7 +194,7 @@ void draw_line(int x0, int y0, int x1, int y1)
     //vertical line
     if( dx == 0){
         for(int y = y0; y < y1; ++y)
-            set_pixel(x0, y, white_color );
+            set_pixel(x0, y, current_color );
     }
     float m = dy/dx;
 
@@ -205,21 +204,21 @@ void draw_line(int x0, int y0, int x1, int y1)
         //quad IV, m >= -1
         if(  m <=  1 && m >= -1  ){
             for(int x = x0; x < x1; ++x){
-                set_pixel(x, yNext,white_color );
+                set_pixel(x, yNext,current_color );
                 yNext = yNext + m; // dda algotithm y_k+1 = yk + m for every x incriment
             }
         }
         //quad I, m > 1
         if( m > 1 ){
             for(int y = y0; y < y1; ++y){
-                set_pixel(xNext, y,white_color );
+                set_pixel(xNext, y,current_color );
                 xNext = xNext + 1/m;
             }
         }
         //quad IV m < 1
         if( m < 1){
             for(int y = y0; y > y1; --y){
-                set_pixel(xNext, y ,white_color);
+                set_pixel(xNext, y ,current_color);
                 xNext = xNext - 1/m;
             }
         }
@@ -232,7 +231,7 @@ void draw_line(int x0, int y0, int x1, int y1)
         //   m > -1
         if(  m >= -1  ){
             for(int x = x0; x > x1; --x){
-                set_pixel(x, yNext,white_color );
+                set_pixel(x, yNext,current_color );
                 yNext = yNext - m; // dda algotithm y_k+1 = yk + m for every x incriment
             }
         }
@@ -242,7 +241,7 @@ void draw_line(int x0, int y0, int x1, int y1)
         if( dy > 0){
             if( m < -1 ){
                 for(int y = y0; y < y1; ++y){
-                    set_pixel(xNext, y,white_color );
+                    set_pixel(xNext, y,current_color );
                     xNext = xNext + 1/m;
                 }
             }            
@@ -252,7 +251,7 @@ void draw_line(int x0, int y0, int x1, int y1)
         if( dy < 0){
             if( m > 1 ){
                 for(int y = y0; y > y1; --y){
-                    set_pixel(xNext, y,white_color );
+                    set_pixel(xNext, y,current_color );
                     xNext = xNext - 1/m;
                 }
             }            
@@ -299,7 +298,7 @@ void plotLines(){
     for (int i=0; i < points_array.size(); ++i){
       //must multiply coordinates by sceenheight , screenwidth to scale properly
       //plot points for now -> delete later
-      set_pixel( points_array[i].x,points_array[i].y, white_color);
+      set_pixel( points_array[i].x,points_array[i].y, current_color);
     }
 
 
@@ -321,15 +320,15 @@ void plotLines(){
       draw_line(x2,y2,x3,y3);
       draw_line(x3,y3,x1,y1);
 
-      //next shade in triangle!
-      // //check baycentric coordinates
-      // for(unsigned x = 0; x < MGL_SCREEN_WIDTH; x++) {
-      //   for(unsigned y = 0; y < MGL_SCREEN_HEIGHT; ++y) {
-      //     if( isInsideTri(x1,y1,x2,y2,x3,y3,x,y) )
-      //       set_pixel(x,y,white_color);
+      //check baycentric coordinates
+      for(unsigned x = 0; x < MGL_SCREEN_WIDTH; x++) {
+        for(unsigned y = 0; y < MGL_SCREEN_HEIGHT; ++y) {
+          if( isInsideTri(x1,y1,x2,y2,x3,y3,x,y) )
+            set_pixel(x,y,current_color);
 
-      // }
+      }
     }
+  }
   
 
   if( mgl_mode == MGL_QUADS){
@@ -359,19 +358,12 @@ void plotLines(){
       for(unsigned x = 0; x < MGL_SCREEN_WIDTH; x++) {
         for(unsigned y = 0; y < MGL_SCREEN_HEIGHT; ++y) {
           if( isInsideTri(x1,y1,x2,y2,x3,y3,x,y) || isInsideTri(x1,y1,x4,y4,x3,y3,x,y)  )
-            set_pixel(x,y,white_color);
+            set_pixel(x,y,current_color);
         }
 
+      }
     }
   }
-}
-
-    //next plot connect each point to make lines
-    //currently own collection of vectors -> need to perform matrix multiplaction one each
-
-
-
-
 /**
  * Standard macro to report errors
  */
@@ -422,6 +414,7 @@ void mglBegin(MGLpoly_mode mode)
 void mglEnd()
 {
     isDrawing = false;
+    points_array.clear();
 }
 
 //load projection matrix and multiply vertex to scale it
