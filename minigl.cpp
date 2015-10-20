@@ -155,6 +155,7 @@ MGLpixel MGL_SCREEN_HEIGHT = 240;
 MGLpixel resolution = MGL_SCREEN_WIDTH/MGL_SCREEN_HEIGHT;
 MGLpixel framebuffer[320][240];
 RGB white_color(255,255,255);//white color
+RGB current_color;
 
 string stack_status;
 stack <Matrix4> proj_stack;
@@ -295,49 +296,12 @@ bool isInsideTri(int x1, int y1, int x2, int y2, int x3, int y3, int x, int y)
 
 
 void plotLines(){
-    
-
     for (int i=0; i < points_array.size(); ++i){
       //must multiply coordinates by sceenheight , screenwidth to scale properly
       //plot points for now -> delete later
       set_pixel( points_array[i].x,points_array[i].y, white_color);
-
     }
-    if( mgl_mode == MGL_TRIANGLES){
 
-      int x1 = points_array[0].x;
-      int y1 = points_array[0].y;
-      int z1 = points_array[0].z;
-
-      int x2 = points_array[1].x;
-      int y2 = points_array[1].y;
-      int z2 = points_array[1].z;
-
-      int x3 = points_array[2].x;
-      int y3 = points_array[2].y;
-      int z3 = points_array[2].z;
-
-      draw_line(x1,y1,x2,y2);
-      draw_line(x2,y2,x3,y3);
-      draw_line(x3,y3,x1,y1);
-
-
-      //next shade in triangle!
-      //check baycentric coordinates
-      for(unsigned x = 0; x < MGL_SCREEN_WIDTH; x++) {
-        for(unsigned y = 0; y < MGL_SCREEN_HEIGHT; ++y) {
-          if( isInsideTri(x1,y1,x2,y2,x3,y3,x,y) )
-            set_pixel(x,y,white_color);
-
-            }
-        }
-    }   
-    for (int i=0; i < points_array.size(); ++i){
-      //must multiply coordinates by sceenheight , screenwidth to scale properly
-      //plot points for now -> delete later
-      set_pixel( points_array[i].x,points_array[i].y, white_color);
-
-    }
 
     if( mgl_mode == MGL_TRIANGLES){
 
@@ -357,20 +321,16 @@ void plotLines(){
       draw_line(x2,y2,x3,y3);
       draw_line(x3,y3,x1,y1);
 
-
       //next shade in triangle!
-      //check baycentric coordinates
-      for(unsigned x = 0; x < MGL_SCREEN_WIDTH; x++) {
-        for(unsigned y = 0; y < MGL_SCREEN_HEIGHT; ++y) {
-          if( isInsideTri(x1,y1,x2,y2,x3,y3,x,y) )
-            set_pixel(x,y,white_color);
+      // //check baycentric coordinates
+      // for(unsigned x = 0; x < MGL_SCREEN_WIDTH; x++) {
+      //   for(unsigned y = 0; y < MGL_SCREEN_HEIGHT; ++y) {
+      //     if( isInsideTri(x1,y1,x2,y2,x3,y3,x,y) )
+      //       set_pixel(x,y,white_color);
 
-      }
+      // }
     }
-
-
-
-  }
+  
 
   if( mgl_mode == MGL_QUADS){
       int x1 = points_array[0].x;
@@ -389,12 +349,21 @@ void plotLines(){
       int y4 = points_array[3].y;
       int z4 = points_array[3].z;
 
-      draw_line(x1,y1,x2,y2);
-      draw_line(x2,y2,x3,y3);
-      draw_line(x3,y3,x4,y4);
-      draw_line(x4,y4,x1,y1);
-    }
+      // draw_line(x1,y1,x2,y2);
+      // draw_line(x2,y2,x3,y3);
+      // draw_line(x3,y3,x4,y4);
+      // draw_line(x4,y4,x1,y1);
 
+      //next shade in triangle!
+      //check baycentric coordinates
+      for(unsigned x = 0; x < MGL_SCREEN_WIDTH; x++) {
+        for(unsigned y = 0; y < MGL_SCREEN_HEIGHT; ++y) {
+          if( isInsideTri(x1,y1,x2,y2,x3,y3,x,y) || isInsideTri(x1,y1,x4,y4,x3,y3,x,y)  )
+            set_pixel(x,y,white_color);
+        }
+
+    }
+  }
 }
 
     //next plot connect each point to make lines
@@ -443,17 +412,8 @@ void mglReadPixels(MGLsize width,
 void mglBegin(MGLpoly_mode mode)
 {
     isDrawing = true;
-	//if mode is triangle set current mode to triangle
-	if(mode ==  MGL_TRIANGLES) 
-        mgl_mode == MGL_TRIANGLES;
-    
-    //if mode is quads
-	else if(mode == MGL_QUADS) 
-        mgl_mode == MGL_QUADS;
+    mgl_mode = mode;
 
-	//if something else
-	else 
-        cout << "ERROR" << endl;
 }
 
 /**
@@ -502,16 +462,10 @@ Vertex3 convert_to_screen(MGLfloat x, MGLfloat y, MGLfloat z){
   translater.matrix4[3][2] = 1;
   translater.matrix4[3][3] = 1;
   
-
-
   tmp = tmp * proj;
   tmp = tmp * translater;
   tmp = tmp * scaler;
-  tmp.print_matrix();
-
-
-  cout << tmp.matrix4[3][0];
-  return Vertex3( tmp.matrix4[3][0] , tmp.matrix4[3][1], tmp.matrix4[3][2]);
+  return Vertex3( tmp.matrix4[3][0] / tmp.matrix4[3][3] , tmp.matrix4[3][1]/tmp.matrix4[3][3] , tmp.matrix4[3][2]/tmp.matrix4[3][3] );
 
 }
 
@@ -544,10 +498,8 @@ void mglVertex3(MGLfloat x,
 {
 
     Vertex3 vertex = convert_to_screen( x , y, z);
-
     //Vertex3 vertex (x ,y ,0);
     points_array.push_back(vertex);
-
 }
 
 /**
@@ -700,16 +652,14 @@ void mglFrustum(MGLfloat l,
                 MGLfloat f)
 {
   Matrix4 tmp;
-  tmp.matrix4[3][3] = 0;
-  tmp.matrix4[0][0] = 2/(r-l);
-  tmp.matrix4[1][1] = 2/(t-b);
-  tmp.matrix4[2][2] = 2/(f-n);
-
-  tmp.matrix4[0][3] = -(r+l)/(r-l);
-  tmp.matrix4[1][3] = -(t+b)/(t-b);
-  tmp.matrix4[2][3] = -(f+n)/(f-n);
-
-
+  tmp.matrix4[0][0] = 2*n/(r-l);
+  tmp.matrix4[1][1] = 2*n/(t-b);
+  tmp.matrix4[2][2] = -(f+n)/(f-n);
+  tmp.matrix4[2][0] = (r+l)/(r-l);
+  tmp.matrix4[2][1] = (t+b)/(t-b);
+  tmp.matrix4[2][3] = -1;
+  tmp.matrix4[3][2] = (-2*f*n)/(f-n);
+  currentMatrix = tmp * currentMatrix ;
 
 
 }
@@ -744,4 +694,8 @@ void mglColor(MGLbyte red,
               MGLbyte green,
               MGLbyte blue)
 {
+
+  current_color.R = red; 
+  current_color.G = green; 
+  current_color.B = blue;
 }
