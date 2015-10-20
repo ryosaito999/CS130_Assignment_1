@@ -155,8 +155,14 @@ MGLpixel resolution = MGL_SCREEN_WIDTH/MGL_SCREEN_HEIGHT;
 MGLpixel framebuffer[320][240];
 RGB white_color(255,255,255);//white color
 
-stack <Matrix4> m_stack;
+string stack_status;
+stack <Matrix4> proj_stack;
+stack <Matrix4> model_stack;
+
+
 Matrix4 currentMatrix;
+
+
 
 //HELPER FUNCTIONS
 
@@ -474,6 +480,10 @@ Vertex3 convert_to_screen(MGLfloat x, MGLfloat y, MGLfloat z){
   tmp.matrix4[2][3] = z;
   tmp.matrix4[3][3] = 1;
 
+  //load projection matrix on top of projectional stack (gonna be orthogonal matrix or fulcurum matrix)
+
+  Matrix4 proj = proj_stack.top();
+  
   //Scale screen to 0,0 -> 2,2
   Matrix4 scaler;
   scaler.matrix4[0][0] = MGL_SCREEN_WIDTH/2; 
@@ -493,7 +503,7 @@ Vertex3 convert_to_screen(MGLfloat x, MGLfloat y, MGLfloat z){
   translater.matrix4[2][3] = 1;
   translater.matrix4[3][3] = 1;
 
-
+  tmp = proj * tmp;
   tmp = translater * tmp;
   tmp = scaler * tmp;
   tmp.print_matrix();
@@ -543,6 +553,15 @@ void mglVertex3(MGLfloat x,
  */
 void mglMatrixMode(MGLmatrix_mode mode)
 {
+
+  mglPushMatrix();
+  if( mode == MGL_MODELVIEW){
+    stack_status = "modelview";
+  }
+
+    if( mode == MGL_PROJECTION){
+    stack_status = "projection";
+  }
 }
 
 /**
@@ -552,6 +571,12 @@ void mglMatrixMode(MGLmatrix_mode mode)
 void mglPushMatrix()
 {
 
+  if( stack_status == "projection" )
+    proj_stack.push(currentMatrix);
+  
+
+  else
+    model_stack.push(currentMatrix);
 
 
 }
@@ -562,6 +587,13 @@ void mglPushMatrix()
  */
 void mglPopMatrix()
 {
+    if( stack_status == "projection" )
+    proj_stack.pop();
+  
+
+  else
+    model_stack.pop();
+
 }
 
 /**
@@ -575,6 +607,7 @@ void mglLoadIdentity()
    identityMatrix.matrix4[2][2] = 1;
    identityMatrix.matrix4[3][3] = 1;
 
+   currentMatrix = identityMatrix;
 
 
 }
@@ -612,7 +645,7 @@ void mglLoadMatrix(const MGLfloat *matrix)
  *
  * where ai is the i'th entry of the array.
  */
-void mglMultMatrix(const MGLfloat *matrix)
+void mglMultMatrix(const MGLfloat *matrix) 
 {
 }
 
@@ -624,6 +657,9 @@ void mglTranslate(MGLfloat x,
                   MGLfloat y,
                   MGLfloat z)
 {
+
+
+
 }
 
 /**
@@ -672,6 +708,22 @@ void mglOrtho(MGLfloat left,
               MGLfloat near,
               MGLfloat far)
 {
+
+
+  Matrix4 tmp;
+  tmp.matrix4[0][3] = -(right+left)/(right-left);
+  tmp.matrix4[1][3] = -(top+bottom)/(top-bottom);
+  tmp.matrix4[2][3] = -(far+near)/(far-near);
+  tmp.matrix4[3][3] = 1;
+  tmp.matrix4[0][0] = 2/(right-left);
+  tmp.matrix4[1][1] = 2/(top-bottom);
+  tmp.matrix4[2][2] = 2/(far-near);
+
+  //matrix4x4 temp3 = temp* (*current_matrix);
+  Matrix4 temp3 = currentMatrix * tmp;
+  currentMatrix =  temp3;
+
+   currentMatrix.print_matrix();
 
 
 
