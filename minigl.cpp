@@ -124,6 +124,7 @@ public:
         s=0;
         for (int e=0;e<4;e++)
           s+=matrix4[i][e]* m.matrix4[e][j];
+
         
         temp.matrix4[i][j]=s;
       }
@@ -197,7 +198,7 @@ void draw_line(int x0, int y0, int x1, int y1)
     }
     float m = dy/dx;
 
-    // Right Side
+    // r Side
     if( dx > 0 )   {
         //quad I, m <= 1
         //quad IV, m >= -1
@@ -224,7 +225,7 @@ void draw_line(int x0, int y0, int x1, int y1)
         
     }
     
-    //left side
+    //l side
     if( dx < 0){
         //quad II , quad III
         //   m > -1
@@ -249,7 +250,6 @@ void draw_line(int x0, int y0, int x1, int y1)
         // m > 1
         if( dy < 0){
             if( m > 1 ){
-                cout << "???";
                 for(int y = y0; y > y1; --y){
                     set_pixel(xNext, y,white_color );
                     xNext = xNext - 1/m;
@@ -457,11 +457,10 @@ void mglBegin(MGLpoly_mode mode)
 }
 
 /**
- * Stop specifying the vertices for a group of primitives.
+ * St specifying the vertices for a group of primitives.
  */
 void mglEnd()
 {
-    cout << points_array.size() << endl;
     isDrawing = false;
 }
 
@@ -475,15 +474,15 @@ Vertex3 convert_to_screen(MGLfloat x, MGLfloat y, MGLfloat z){
 
   //Create a 4x4 matrix with the point coordinates
   Matrix4 tmp;
-  tmp.matrix4[0][3] = x;
-  tmp.matrix4[1][3] = y;
-  tmp.matrix4[2][3] = z;
+  tmp.matrix4[3][0] = x;
+  tmp.matrix4[3][1] = y;
+  tmp.matrix4[3][2] = z;
   tmp.matrix4[3][3] = 1;
 
-  //load projection matrix on top of projectional stack (gonna be orthogonal matrix or fulcurum matrix)
+  //load projection matrix on t of projectional stack (gonna be orthogonal matrix or Frustum matrix)
 
   Matrix4 proj = proj_stack.top();
-  
+
   //Scale screen to 0,0 -> 2,2
   Matrix4 scaler;
   scaler.matrix4[0][0] = MGL_SCREEN_WIDTH/2; 
@@ -492,22 +491,27 @@ Vertex3 convert_to_screen(MGLfloat x, MGLfloat y, MGLfloat z){
   scaler.matrix4[3][3] = 1;
   
 
-  //Load matrix that translate screen up 1 right 1
+  //Load matrix that translate screen up 1 r 1
   Matrix4 translater;
   translater.matrix4[0][0] = 1;
   translater.matrix4[1][1] = 1;
   translater.matrix4[2][2] = 1;
   translater.matrix4[3][3] = 1;
-  translater.matrix4[0][3] = 1;
-  translater.matrix4[1][3] = 1;
-  translater.matrix4[2][3] = 1;
+  translater.matrix4[3][0] = 1;
+  translater.matrix4[3][1] = 1;
+  translater.matrix4[3][2] = 1;
   translater.matrix4[3][3] = 1;
+  
 
-  tmp = proj * tmp;
-  tmp = translater * tmp;
-  tmp = scaler * tmp;
+
+  tmp = tmp * proj;
+  tmp = tmp * translater;
+  tmp = tmp * scaler;
   tmp.print_matrix();
-  return Vertex3( tmp.matrix4[0][3] , tmp.matrix4[1][3], tmp.matrix4[2][3]);
+
+
+  cout << tmp.matrix4[3][0];
+  return Vertex3( tmp.matrix4[3][0] , tmp.matrix4[3][1], tmp.matrix4[3][2]);
 
 }
 
@@ -522,7 +526,6 @@ void mglVertex2(MGLfloat x,
                 MGLfloat y)
 {
     //need to convert coordinates to orthographic 
-    cout << "x: " << x<< ", y: " << y  << endl;
     Vertex3 vertex = convert_to_screen( x , y, 0);
 
     //Vertex3 vertex (x ,y ,0);
@@ -540,7 +543,6 @@ void mglVertex3(MGLfloat x,
                 MGLfloat z)
 {
 
-    cout << "x: " << x<< ", y: " << y  << endl;
     Vertex3 vertex = convert_to_screen( x , y, z);
 
     //Vertex3 vertex (x ,y ,0);
@@ -582,7 +584,7 @@ void mglPushMatrix()
 }
 
 /**
- * Pop the top matrix from the stack for the current matrix
+ * Pop the t matrix from the stack for the current matrix
  * mode.
  */
 void mglPopMatrix()
@@ -688,45 +690,51 @@ void mglScale(MGLfloat x,
  * Multiply the current matrix by the perspective matrix
  * with the given clipping plane coordinates.
  */
-void mglFrustum(MGLfloat left,
-                MGLfloat right,
-                MGLfloat bottom,
-                MGLfloat top,
-                MGLfloat near,
-                MGLfloat far)
+
+ //includes z axis for clipping purposes
+void mglFrustum(MGLfloat l,
+                MGLfloat r,
+                MGLfloat b,
+                MGLfloat t,
+                MGLfloat n,
+                MGLfloat f)
 {
+  Matrix4 tmp;
+  tmp.matrix4[3][3] = 0;
+  tmp.matrix4[0][0] = 2/(r-l);
+  tmp.matrix4[1][1] = 2/(t-b);
+  tmp.matrix4[2][2] = 2/(f-n);
+
+  tmp.matrix4[0][3] = -(r+l)/(r-l);
+  tmp.matrix4[1][3] = -(t+b)/(t-b);
+  tmp.matrix4[2][3] = -(f+n)/(f-n);
+
+
+
+
 }
 
 /**
  * Multiply the current matrix by the orthographic matrix
  * with the given clipping plane coordinates.
  */
-void mglOrtho(MGLfloat left,
-              MGLfloat right,
-              MGLfloat bottom,
-              MGLfloat top,
-              MGLfloat near,
-              MGLfloat far)
+void mglOrtho(MGLfloat l,
+              MGLfloat r,
+              MGLfloat b,
+              MGLfloat t,
+              MGLfloat n,
+              MGLfloat f)
 {
-
-
   Matrix4 tmp;
-  tmp.matrix4[0][3] = -(right+left)/(right-left);
-  tmp.matrix4[1][3] = -(top+bottom)/(top-bottom);
-  tmp.matrix4[2][3] = -(far+near)/(far-near);
+  tmp.matrix4[3][0] = -(r+l)/(r-l);
+  tmp.matrix4[3][1] = -(t+b)/(t-b);
+  tmp.matrix4[3][2] = -(f+n)/(f-n);
   tmp.matrix4[3][3] = 1;
-  tmp.matrix4[0][0] = 2/(right-left);
-  tmp.matrix4[1][1] = 2/(top-bottom);
-  tmp.matrix4[2][2] = 2/(far-near);
+  tmp.matrix4[0][0] = 2/(r-l);
+  tmp.matrix4[1][1] = 2/(t-b);
+  tmp.matrix4[2][2] = 2/(f-n);
 
-  //matrix4x4 temp3 = temp* (*current_matrix);
-  Matrix4 temp3 = currentMatrix * tmp;
-  currentMatrix =  temp3;
-
-   currentMatrix.print_matrix();
-
-
-
+  currentMatrix = tmp * currentMatrix;
 }
 
 /**
