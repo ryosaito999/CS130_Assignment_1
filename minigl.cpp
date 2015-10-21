@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <vector>
 #include <cmath>
+#include <math.h>
 #include <stack>
 #include <cstdlib>
 #include <string>
@@ -474,6 +475,8 @@ void mglVertex2(MGLfloat x,
 
     //Vertex3 vertex (x ,y ,0);
     points_array.push_back(vertex);
+    cout << "X: " << vertex.x << " Y: " << vertex. y << " z: " << vertex.z << endl;
+
 
 }
 
@@ -486,9 +489,7 @@ void mglVertex3(MGLfloat x,
                 MGLfloat y,
                 MGLfloat z)
 {
-
     Vertex3 vertex = convert_to_screen( x , y, z);
-    //Vertex3 vertex (x ,y ,0);
     points_array.push_back(vertex);
 }
 
@@ -629,8 +630,22 @@ void mglRotate(MGLfloat angle,
                MGLfloat y,
                MGLfloat z)
 {
+  angle = angle * M_PI/180;
+
   Matrix4 rotater;
-  rotater.matrix4[0][0] = x * x *( 1- 1);
+  rotater.matrix4[0][0] = x * x *( 1- cos(angle)) + cos(angle);
+  rotater.matrix4[1][0] = x * y *( 1- cos(angle)) - z* sin(angle);
+  rotater.matrix4[2][0] = x * z *( 1- cos(angle)) + y* sin(angle);
+
+  rotater.matrix4[0][1] = x * y *( 1- cos(angle)) + z* sin(angle);
+  rotater.matrix4[1][1] = y * y *( 1- cos(angle)) + cos(angle);
+  rotater.matrix4[2][1] = z * y *( 1- cos(angle)) - x* sin(angle);
+
+  rotater.matrix4[0][2] = z * x *( 1- cos(angle)) - y* sin(angle);
+  rotater.matrix4[1][2] = z * y *( 1- cos(angle)) + x* sin(angle);
+  rotater.matrix4[2][2] = z * z *( 1- cos(angle)) + cos(angle);
+  currentMatrix = currentMatrix * rotater;
+
   //need to rotate around vector (x,y,z)
 
 
@@ -651,7 +666,11 @@ void mglScale(MGLfloat x,
   scaler.matrix4[2][2] = z; 
   scaler.matrix4[3][3] = 1;
   
+  currentMatrix.print_matrix();
+
+  
   currentMatrix = currentMatrix * scaler;
+  currentMatrix.print_matrix();
 
 }
 
