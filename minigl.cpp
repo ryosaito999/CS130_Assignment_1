@@ -8,7 +8,7 @@
 #include <cstdio>
 #include <vector>
 #include <cmath>
- #include <stack>
+#include <stack>
 #include <cstdlib>
 #include <string>
 #include <iostream>
@@ -34,7 +34,7 @@ class Vertex3{
     }
 };
 
-//not sure what to use this for??
+//not sure what to use this for?? kept it as a what if 
 class Vertex4{
 
     public:
@@ -150,20 +150,20 @@ MGLpoly_mode mgl_mode; //triangles or squares?
 bool isDrawing;
 vector <Vertex3> points_array; 
 
-MGLpixel MGL_SCREEN_WIDTH = 320;
-MGLpixel MGL_SCREEN_HEIGHT = 240;
-MGLpixel resolution = MGL_SCREEN_WIDTH/MGL_SCREEN_HEIGHT;
-MGLpixel framebuffer[320][240];
+MGLpixel SCREEN_WIDTH = 320;
+MGLpixel SCREEN_HEIGHT = 240;
+MGLpixel resolution = SCREEN_WIDTH/SCREEN_HEIGHT;
+MGLpixel screenBuffer[320][240];
 RGB current_color;
 
-string stack_status;
+string stack_status; //Projection or modelview at the current moment?
+
 stack <Matrix4> proj_stack;
 stack <Matrix4> model_stack;
 
-
+//out current matrix on top of the stack
+//all transformations will be applied to this matrix!
 Matrix4 currentMatrix;
-
-
 
 //HELPER FUNCTIONS
 
@@ -180,7 +180,7 @@ void set_pixel(unsigned int x, unsigned int y, RGB coloring)
  	MGL_SET_RED(color, coloring.R); 
  	MGL_SET_GREEN(color, coloring.G); 
  	MGL_SET_BLUE(color, coloring.B); 
-  framebuffer[x][y] = color; //draw everything queued up on buffer
+  screenBuffer[x][y] = color; //draw everything queued up on buffer
 }  
 
 
@@ -291,9 +291,6 @@ bool isInsideTri(int x1, int y1, int x2, int y2, int x3, int y3, int x, int y)
    return (A == A1 + A2 + A3);
 }
 
-
-
-
 void plotLines(){
     for (int i=0; i < points_array.size(); ++i){
       //must multiply coordinates by sceenheight , screenwidth to scale properly
@@ -321,8 +318,8 @@ void plotLines(){
       draw_line(x3,y3,x1,y1);
 
       //check baycentric coordinates
-      for(unsigned x = 0; x < MGL_SCREEN_WIDTH; x++) {
-        for(unsigned y = 0; y < MGL_SCREEN_HEIGHT; ++y) {
+      for(unsigned x = 0; x < SCREEN_WIDTH; x++) {
+        for(unsigned y = 0; y < SCREEN_HEIGHT; ++y) {
           if( isInsideTri(x1,y1,x2,y2,x3,y3,x,y) )
             set_pixel(x,y,current_color);
 
@@ -355,8 +352,8 @@ void plotLines(){
 
       //next shade in triangle!
       //check baycentric coordinates
-      for(unsigned x = 0; x < MGL_SCREEN_WIDTH; x++) {
-        for(unsigned y = 0; y < MGL_SCREEN_HEIGHT; ++y) {
+      for(unsigned x = 0; x < SCREEN_WIDTH; x++) {
+        for(unsigned y = 0; y < SCREEN_HEIGHT; ++y) {
           if( isInsideTri(x1,y1,x2,y2,x3,y3,x,y) || isInsideTri(x1,y1,x4,y4,x3,y3,x,y)  )
             set_pixel(x,y,current_color);
         }
@@ -394,7 +391,7 @@ void mglReadPixels(MGLsize width,
 
 	for(unsigned x = 0; x < width; x++) 
  		for(unsigned y = 0; y < height; ++y) 
- 			data[y*width+x] = framebuffer[x][y]; 
+ 			data[y*width+x] = screenBuffer[x][y]; 
 }
 
 /**
@@ -438,8 +435,8 @@ Vertex3 convert_to_screen(MGLfloat x, MGLfloat y, MGLfloat z){
 
   //Scale screen to 0,0 -> 2,2
   Matrix4 scaler;
-  scaler.matrix4[0][0] = MGL_SCREEN_WIDTH/2; 
-  scaler.matrix4[1][1] = MGL_SCREEN_HEIGHT/2;
+  scaler.matrix4[0][0] = SCREEN_WIDTH/2; 
+  scaler.matrix4[1][1] = SCREEN_HEIGHT/2;
   scaler.matrix4[2][2] = 1; 
   scaler.matrix4[3][3] = 1;
   
@@ -517,15 +514,11 @@ void mglMatrixMode(MGLmatrix_mode mode)
  */
 void mglPushMatrix()
 {
-
   if( stack_status == "projection" )
     proj_stack.push(currentMatrix);
   
-
   else
     model_stack.push(currentMatrix);
-
-
 }
 
 /**
@@ -537,10 +530,8 @@ void mglPopMatrix()
     if( stack_status == "projection" )
     proj_stack.pop();
   
-
   else
     model_stack.pop();
-
 }
 
 /**
@@ -555,8 +546,6 @@ void mglLoadIdentity()
    identityMatrix.matrix4[3][3] = 1;
 
    currentMatrix = identityMatrix;
-
-
 }
 
 /**
@@ -594,6 +583,17 @@ void mglLoadMatrix(const MGLfloat *matrix)
  */
 void mglMultMatrix(const MGLfloat *matrix) 
 {
+  currentMatrix;
+  Matrix4 temp;
+
+  // for( int i= 0; i <4 ; ++i){
+  //   for (int j = 0; j< 4; ++j)
+  //   {
+  //     matrix[j][i] = temp.matrix4[j][i]; 
+  //   }
+  // }
+
+  //   currentMatrix = currentMatrix * temp;
 }
 
 /**
@@ -605,7 +605,17 @@ void mglTranslate(MGLfloat x,
                   MGLfloat z)
 {
 
+  Matrix4 translater;
+  translater.matrix4[0][0] = 1;
+  translater.matrix4[1][1] = 1;
+  translater.matrix4[2][2] = 1;
+  translater.matrix4[3][3] = 1;
+  translater.matrix4[3][0] = x;
+  translater.matrix4[3][1] = y;
+  translater.matrix4[3][2] = z;
+  translater.matrix4[3][3] = 1;
 
+  currentMatrix = currentMatrix * translater;
 
 }
 
@@ -619,6 +629,11 @@ void mglRotate(MGLfloat angle,
                MGLfloat y,
                MGLfloat z)
 {
+  Matrix4 rotater;
+  rotater.matrix4[0][0] = x * x *( 1- 1);
+  //need to rotate around vector (x,y,z)
+
+
 }
 
 /**
@@ -629,6 +644,15 @@ void mglScale(MGLfloat x,
               MGLfloat y,
               MGLfloat z)
 {
+
+  Matrix4 scaler;
+  scaler.matrix4[0][0] = x; 
+  scaler.matrix4[1][1] = y;
+  scaler.matrix4[2][2] = z; 
+  scaler.matrix4[3][3] = 1;
+  
+  currentMatrix = currentMatrix * scaler;
+
 }
 
 /**
