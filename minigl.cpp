@@ -406,7 +406,7 @@ void mglEnd()
 
 Vertex3 convert_to_screen(MGLfloat x, MGLfloat y, MGLfloat z){
 
-  //Create a 4x4 matrix with the point coordinates
+  //Create a 4x4 matrix with xyz
   Matrix4 tmp;
   tmp.matrix4[3][0] = x;
   tmp.matrix4[3][1] = y;
@@ -415,7 +415,14 @@ Vertex3 convert_to_screen(MGLfloat x, MGLfloat y, MGLfloat z){
 
   //load projection matrix on t of projectional stack (gonna be orthogonal matrix or Frustum matrix)
 
-  Matrix4 proj = proj_stack.top();
+   Matrix4 proj = proj_stack.top();
+  // proj.print_matrix(); 
+  // cout << "PROJ" << endl;
+
+  // Matrix4 model = model_stack.top();
+  // model.print_matrix(); 
+  // cout << "MODEL" << endl;
+
 
   //Scale screen to 0,0 -> 2,2
   Matrix4 scaler;
@@ -435,8 +442,8 @@ Vertex3 convert_to_screen(MGLfloat x, MGLfloat y, MGLfloat z){
   translater.matrix4[3][2] = 1;
   translater.matrix4[3][3] = 1;
   
+  currentMatrix. print_matrix();
   tmp = tmp * currentMatrix;
-
   tmp = tmp * proj;
   tmp = tmp * translater;
   tmp = tmp * scaler;
@@ -502,8 +509,6 @@ void mglPushMatrix()
 
   else
     return;
-
-
 }
 
 /**
@@ -512,11 +517,18 @@ void mglPushMatrix()
  */
 void mglPopMatrix()
 {
+  //OHHHHHH RIGHHHHHHHHHHT
+  // Set current matrix to top of stack! Dont pop matrix!
+    if( model_stack.empty()){
+      cout << "ERROR, no matrix available";
+      exit(1);
+    }
+
     if( stack_status == "projection" )
-    proj_stack.pop();
-  
-  else
-    model_stack.pop();
+      currentMatrix = proj_stack.top();
+   
+    if( stack_status == "model" )
+      currentMatrix = model_stack.top();
 }
 
 /**
@@ -589,7 +601,6 @@ void mglTranslate(MGLfloat x,
                   MGLfloat y,
                   MGLfloat z)
 {
-
   Matrix4 translater;
   translater.matrix4[0][0] = 1;
   translater.matrix4[1][1] = 1;
@@ -598,9 +609,15 @@ void mglTranslate(MGLfloat x,
   translater.matrix4[3][0] = x;
   translater.matrix4[3][1] = y;
   translater.matrix4[3][2] = z;
-  translater.matrix4[3][3] = 1;
+  
+  // translater.print_matrix();
+  // currentMatrix.print_matrix();
+  // cout << "precalc" << endl;
 
   currentMatrix = currentMatrix * translater;
+  // currentMatrix.print_matrix();
+  // cout << "after calc" << endl;
+
 
 }
 
@@ -614,6 +631,14 @@ void mglRotate(MGLfloat angle,
                MGLfloat y,
                MGLfloat z)
 {
+  
+  float n =  sqrt(x*x + y*y + z*z);
+
+  //first translate to point x,y,z
+  x = x/n;
+  y = y/n;
+  z = z/n;
+
   angle = angle * M_PI/180;
 
   Matrix4 rotater;
@@ -628,7 +653,9 @@ void mglRotate(MGLfloat angle,
   rotater.matrix4[0][2] = z * x *( 1- cos(angle)) - y* sin(angle);
   rotater.matrix4[1][2] = z * y *( 1- cos(angle)) + x* sin(angle);
   rotater.matrix4[2][2] = z * z *( 1- cos(angle)) + cos(angle);
-  currentMatrix = currentMatrix * rotater;
+  rotater.matrix4[3][3] = 1;
+
+  currentMatrix =  rotater * currentMatrix;
 
   //need to rotate around vector (x,y,z)
 }
@@ -641,17 +668,13 @@ void mglScale(MGLfloat x,
               MGLfloat y,
               MGLfloat z)
 {
-
   Matrix4 scaler;
   scaler.matrix4[0][0] = x; 
   scaler.matrix4[1][1] = y;
   scaler.matrix4[2][2] = z; 
   scaler.matrix4[3][3] = 1;
-    
-  currentMatrix = currentMatrix * scaler;
-
+  currentMatrix = scaler * currentMatrix;
 }
-
 /**
  * Multiply the current matrix by the perspective matrix
  * with the given clipping plane coordinates.
@@ -674,8 +697,6 @@ void mglFrustum(MGLfloat l,
   tmp.matrix4[2][3] = -1;
   tmp.matrix4[3][2] = (-2*f*n)/(f-n);
   currentMatrix = tmp * currentMatrix ;
-
-
 }
 
 /**

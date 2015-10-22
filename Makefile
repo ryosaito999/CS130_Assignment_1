@@ -12,7 +12,7 @@ $(EXEC): minigl.o main.o
 minigl.o: minigl.cpp minigl.h
 	$(CXX) $(CXXFLAGS) $< -o $@
 
-main.o: main.cpp minigl.h
+main.o: main.cpp minigl.h tests.h
 	$(CXX) $(CXXFLAGS) $< -o $@
 
 clean:
