@@ -17,7 +17,6 @@
 
 using namespace std;
 class Vertex3{
-    
     public:
     float x;
     float y;
@@ -37,7 +36,6 @@ class Vertex3{
 
 //not sure what to use this for?? kept it as a what if 
 class Vertex4{
-
     public:
     float x;
     float y;
@@ -85,13 +83,11 @@ public:
       G=0;
       B=0;
    } 
-   
   RGB(int r, int g, int b){
       R=r;
       G=g;
       B=b;
    } 
-   
 };
 
 class Matrix4 {
@@ -105,9 +101,7 @@ public:
       for(int x= 0 ; x <4 ; ++x){
         matrix4[x][y] = 0 ;
       }
-
   }
-
   Matrix4 operator=(const Matrix4 &m){
     for(int i = 0; i < 4;i++)
       for(int j = 0; j < 4; j++)
@@ -183,8 +177,6 @@ void set_pixel(unsigned int x, unsigned int y, RGB coloring)
  	MGL_SET_BLUE(color, coloring.B); 
   screenBuffer[x][y] = color; //draw everything queued up on buffer
 }  
-
-
 void draw_line(int x0, int y0, int x1, int y1)
 {
     //NOT WORKING CODE(PUT BETTER CODE HERE!!)
@@ -261,8 +253,6 @@ void draw_line(int x0, int y0, int x1, int y1)
     }
     return;
 }
-
-
 //from  http://www.geeksforgeeks.org/check-whether-a-given-point-lies-inside-a-triangle-or-not/
 /* A utility function to calculate area of triangle formed by (x1, y1), 
    (x2, y2) and (x3, y3) */
@@ -271,7 +261,6 @@ double area(int x1, int y1, int x2, int y2, int x3, int y3)
 {
    return abs((x1*(y2-y3) + x2*(y3-y1)+ x3*(y1-y2))/2.0);
 }
-
 /* A function to check whether point P(x, y) lies inside the triangle formed 
    by A(x1, y1), B(x2, y2) and C(x3, y3) */
 bool isInsideTri(int x1, int y1, int x2, int y2, int x3, int y3, int x, int y)
@@ -327,8 +316,6 @@ void plotLines(){
       }
     }
   }
-  
-
   if( mgl_mode == MGL_QUADS){
       int x1 = points_array[0].x;
       int y1 = points_array[0].y;
@@ -350,7 +337,6 @@ void plotLines(){
       // draw_line(x2,y2,x3,y3);
       // draw_line(x3,y3,x4,y4);
       // draw_line(x4,y4,x1,y1);
-
       //next shade in triangle!
       //check baycentric coordinates
       for(unsigned x = 0; x < SCREEN_WIDTH; x++) {
@@ -369,8 +355,6 @@ inline void MGL_ERROR(const char* description) {
     printf("%s\n", description);
     exit(1);
 }
-
-
 /**
  * Read pixel data starting with the pixel at coordinates
  * (0, 0), up to (width,  height), into the array
@@ -414,7 +398,6 @@ void mglEnd()
     isDrawing = false;
     points_array.clear();
 }
-
 //load projection matrix and multiply vertex to scale it
 // void projectionMatrix(x,y,z){
 
@@ -441,7 +424,6 @@ Vertex3 convert_to_screen(MGLfloat x, MGLfloat y, MGLfloat z){
   scaler.matrix4[2][2] = 1; 
   scaler.matrix4[3][3] = 1;
   
-
   //Load matrix that translate screen up 1 r 1
   Matrix4 translater;
   translater.matrix4[0][0] = 1;
@@ -459,8 +441,6 @@ Vertex3 convert_to_screen(MGLfloat x, MGLfloat y, MGLfloat z){
   return Vertex3( tmp.matrix4[3][0] / tmp.matrix4[3][3] , tmp.matrix4[3][1]/tmp.matrix4[3][3] , tmp.matrix4[3][2]/tmp.matrix4[3][3] );
 
 }
-
-
 /**
  * Specify a two-dimensional vertex; the x- and y-coordinates
  * are explicitly specified, while the z-coordinate is assumed
@@ -476,11 +456,7 @@ void mglVertex2(MGLfloat x,
     //Vertex3 vertex (x ,y ,0);
     points_array.push_back(vertex);
     cout << "X: " << vertex.x << " Y: " << vertex. y << " z: " << vertex.z << endl;
-
-
 }
-
-
 /**
  * Specify a three-dimensional vertex.  Must appear between
  * calls to mglBegin() and mglEnd().
@@ -508,7 +484,6 @@ void mglMatrixMode(MGLmatrix_mode mode)
     stack_status = "projection";
   }
 }
-
 /**
  * Push a copy of the current matrix onto the stack for the
  * current matrix mode.
@@ -647,8 +622,6 @@ void mglRotate(MGLfloat angle,
   currentMatrix = currentMatrix * rotater;
 
   //need to rotate around vector (x,y,z)
-
-
 }
 
 /**
