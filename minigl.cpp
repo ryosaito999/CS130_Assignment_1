@@ -439,7 +439,7 @@ Vertex3 convert_to_screen(MGLfloat x, MGLfloat y, MGLfloat z){
   scaler.matrix4[0][0] = SCREEN_WIDTH/2; 
   scaler.matrix4[1][1] = SCREEN_HEIGHT/2;
   scaler.matrix4[2][2] = 1; 
-  scaler.matrix4[3][3] = 1;
+  scaler.matrix4[3][3] = 1;////
   
 
   //Load matrix that translate screen up 1 r 1
@@ -453,9 +453,12 @@ Vertex3 convert_to_screen(MGLfloat x, MGLfloat y, MGLfloat z){
   translater.matrix4[3][2] = 1;
   translater.matrix4[3][3] = 1;
   
+  tmp = tmp * currentMatrix;
+
   tmp = tmp * proj;
   tmp = tmp * translater;
   tmp = tmp * scaler;
+
   return Vertex3( tmp.matrix4[3][0] / tmp.matrix4[3][3] , tmp.matrix4[3][1]/tmp.matrix4[3][3] , tmp.matrix4[3][2]/tmp.matrix4[3][3] );
 
 }
@@ -518,8 +521,14 @@ void mglPushMatrix()
   if( stack_status == "projection" )
     proj_stack.push(currentMatrix);
   
-  else
+  else if  ( stack_status == "modelview" )
+
     model_stack.push(currentMatrix);
+
+  else
+    return;
+
+
 }
 
 /**
@@ -665,12 +674,8 @@ void mglScale(MGLfloat x,
   scaler.matrix4[1][1] = y;
   scaler.matrix4[2][2] = z; 
   scaler.matrix4[3][3] = 1;
-  
-  currentMatrix.print_matrix();
-
-  
+    
   currentMatrix = currentMatrix * scaler;
-  currentMatrix.print_matrix();
 
 }
 
