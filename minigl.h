@@ -37,7 +37,6 @@ typedef enum {
 #define MGL_SET_BLUE(P, C) (P = (((P) & 0xffff00ff) | ((C) << 8)))
 
 
-
 /**
  * Read pixel data starting with the pixel at coordinates
  * (0, 0), up to (width,  height), into the array

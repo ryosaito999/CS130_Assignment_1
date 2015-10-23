@@ -1,4 +1,5 @@
 #include <iostream>
+using namespace std;
 
 static GLfloat gl_trans[6][3] = {
     {0.0, 0.0, 1.0},
@@ -236,28 +237,37 @@ void mglTests(const int test_number)
             mglMatrixMode(MGL_MODELVIEW);//
             mglLoadIdentity();
 
-            // mglPushMatrix();
+            mglPushMatrix();
 
-            // mglTranslate(0.25, 0.5, 0.0);
-            // mglRotate(-45, 0.0, 1.0, 0.0);
-            // mglScale(0.25, 0.25, 1.0);
+            mglTranslate(0.25, 0.5, 0.0);
+            mglRotate(-45, 0.0, 1.0, 0.0);
+            mglScale(0.25, 0.25, 1.0);
 
-            // mglColor(0, 0, 255);
-            // mglBegin(MGL_QUADS);
-            // mglVertex2(-1.0, -1.0);
-            // mglVertex2(1.0, -1.0);
-            // mglVertex2(1.0, 1.0);
-            // mglVertex2(-1.0, 1.0);
-            // mglEnd();
+            mglColor(0, 0, 255);
+            mglBegin(MGL_QUADS);
+            mglVertex2(-1.0, -1.0);
+            mglVertex2(1.0, -1.0);
+            mglVertex2(1.0, 1.0);
+            mglVertex2(-1.0, 1.0);
+            mglEnd();
 
-            // mglPopMatrix();
+            cout << endl << "Creating Triangles -------------------" << endl;
+            mglPopMatrix();
 
             mglColor(255, 0, 0);
+            cout << endl << "ADDING COLOR -------------------" << endl;
+
             mglBegin(MGL_TRIANGLES);
+            cout << endl << "ADDING POINTS -------------------" << endl;
+
             mglVertex3(0.5, 0.25, 0.5);
             mglVertex3(0.75, 0.25, -0.5);
             mglVertex3(0.75, 0.75, -0.5);
+            cout << endl << "PLOTTING -------------------" << endl;
+
             mglEnd();
+            cout << endl << "FINISHED -------------------" << endl;
+
             break;
         case 4:
             mglMatrixMode(MGL_PROJECTION);

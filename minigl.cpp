@@ -282,6 +282,7 @@ bool isInsideTri(int x1, int y1, int x2, int y2, int x3, int y3, int x, int y)
 }
 
 void plotLines(){
+
     for (int i=0; i < points_array.size(); ++i){
       //must multiply coordinates by sceenheight , screenwidth to scale properly
       //plot points for now -> delete later
@@ -302,17 +303,11 @@ void plotLines(){
       int x3 = points_array[2].x;
       int y3 = points_array[2].y;
       int z3 = points_array[2].z;
-
-      draw_line(x1,y1,x2,y2);
-      draw_line(x2,y2,x3,y3);
-      draw_line(x3,y3,x1,y1);
-
       //check baycentric coordinates
       for(unsigned x = 0; x < SCREEN_WIDTH; x++) {
         for(unsigned y = 0; y < SCREEN_HEIGHT; ++y) {
           if( isInsideTri(x1,y1,x2,y2,x3,y3,x,y) )
             set_pixel(x,y,current_color);
-
       }
     }
   }
@@ -333,10 +328,6 @@ void plotLines(){
       int y4 = points_array[3].y;
       int z4 = points_array[3].z;
 
-      // draw_line(x1,y1,x2,y2);
-      // draw_line(x2,y2,x3,y3);
-      // draw_line(x3,y3,x4,y4);
-      // draw_line(x4,y4,x1,y1);
       //next shade in triangle!
       //check baycentric coordinates
       for(unsigned x = 0; x < SCREEN_WIDTH; x++) {
@@ -371,8 +362,6 @@ void mglReadPixels(MGLsize width,
                    MGLsize height,
                    MGLpixel *data)
 {
- 
-  plotLines();
 
 	for(unsigned x = 0; x < width; x++) 
  		for(unsigned y = 0; y < height; ++y) 
@@ -395,8 +384,12 @@ void mglBegin(MGLpoly_mode mode)
  */
 void mglEnd()
 {
+    cout << points_array.size();
+    plotLines();
+
     isDrawing = false;
     points_array.clear();
+
 }
 //load projection matrix and multiply vertex to scale it
 // void projectionMatrix(x,y,z){
@@ -442,9 +435,13 @@ Vertex3 convert_to_screen(MGLfloat x, MGLfloat y, MGLfloat z){
   translater.matrix4[3][2] = 1;
   translater.matrix4[3][3] = 1;
   
-  currentMatrix. print_matrix();
   tmp = tmp * currentMatrix;
+
   tmp = tmp * proj;
+
+  tmp.print_matrix();
+  cout << "currentMatrix" << endl;
+
   tmp = tmp * translater;
   tmp = tmp * scaler;
 
@@ -465,7 +462,11 @@ void mglVertex2(MGLfloat x,
 
     //Vertex3 vertex (x ,y ,0);
     points_array.push_back(vertex);
+
     cout << "X: " << vertex.x << " Y: " << vertex. y << " z: " << vertex.z << endl;
+    cout << "# of points" << points_array.size() << endl;
+
+    //cout << "X: " << vertex.x << " Y: " << vertex. y << " z: " << vertex.z << endl;
 }
 /**
  * Specify a three-dimensional vertex.  Must appear between
@@ -477,6 +478,8 @@ void mglVertex3(MGLfloat x,
 {
     Vertex3 vertex = convert_to_screen( x , y, z);
     points_array.push_back(vertex);
+    cout << "X: " << vertex.x << " Y: " << vertex. y << " z: " << vertex.z << endl;
+    cout << "# of points" << points_array.size() << endl;
 }
 
 /**
@@ -484,7 +487,6 @@ void mglVertex3(MGLfloat x,
  */
 void mglMatrixMode(MGLmatrix_mode mode)
 {
-
   mglPushMatrix();
   if( mode == MGL_MODELVIEW){
     stack_status = "modelview";
@@ -504,7 +506,6 @@ void mglPushMatrix()
     proj_stack.push(currentMatrix);
   
   else if  ( stack_status == "modelview" )
-
     model_stack.push(currentMatrix);
 
   else
@@ -519,16 +520,28 @@ void mglPopMatrix()
 {
   //OHHHHHH RIGHHHHHHHHHHT
   // Set current matrix to top of stack! Dont pop matrix!
-    if( model_stack.empty()){
+    cout <<  stack_status << endl;
+    if( model_stack.empty() ||  proj_stack.empty() ){
       cout << "ERROR, no matrix available";
       exit(1);
     }
 
-    if( stack_status == "projection" )
-      currentMatrix = proj_stack.top();
+    if( stack_status == "projection" ){
+
+       currentMatrix = proj_stack.top();
+       proj_stack.pop();
+
+
+    }
    
-    if( stack_status == "model" )
+    if( stack_status == "modelview" ){
       currentMatrix = model_stack.top();
+      model_stack.pop();
+
+
+  }
+
+
 }
 
 /**
@@ -610,15 +623,7 @@ void mglTranslate(MGLfloat x,
   translater.matrix4[3][1] = y;
   translater.matrix4[3][2] = z;
   
-  // translater.print_matrix();
-  // currentMatrix.print_matrix();
-  // cout << "precalc" << endl;
-
   currentMatrix = currentMatrix * translater;
-  // currentMatrix.print_matrix();
-  // cout << "after calc" << endl;
-
-
 }
 
 /**
@@ -634,7 +639,7 @@ void mglRotate(MGLfloat angle,
   
   float n =  sqrt(x*x + y*y + z*z);
 
-  //first translate to point x,y,z
+  //first convert xyz to unit vector
   x = x/n;
   y = y/n;
   z = z/n;
