@@ -149,12 +149,15 @@ MGLpixel SCREEN_WIDTH = 320;
 MGLpixel SCREEN_HEIGHT = 240;
 MGLpixel resolution = SCREEN_WIDTH/SCREEN_HEIGHT;
 MGLpixel screenBuffer[320][240];
+MGLpixel zBuffer[320][240];
 RGB current_color;
 
 string stack_status; //Projection or modelview at the current moment?
 
 stack <Matrix4> proj_stack;
 stack <Matrix4> model_stack;
+
+
 
 //out current matrix on top of the stack
 //all transformations will be applied to this matrix!
@@ -169,6 +172,13 @@ float slope(int x, int y, int x2, int y2){
 /** 
     set pixel (x,y) to RGB color on frame buffer to draw 
   */ 
+
+void initBuffers(){
+    for(unsigned x = 0; x < SCREEN_WIDTH; x++) 
+      for(unsigned y = 0; y < SCREEN_HEIGHT; ++y) 
+        zBuffer[x][y] = -9999;
+}
+
 void set_pixel(unsigned int x, unsigned int y, RGB coloring) 
 { 
  	MGLpixel color = 0; 
@@ -492,7 +502,8 @@ void mglMatrixMode(MGLmatrix_mode mode)
     stack_status = "modelview";
   }
 
-    if( mode == MGL_PROJECTION){
+  if( mode == MGL_PROJECTION){
+    initBuffers();
     stack_status = "projection";
   }
 }
