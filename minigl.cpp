@@ -34,48 +34,12 @@ class Vertex3{
     }
 };
 
-//not sure what to use this for?? kept it as a what if 
-class Vertex4{
-    public:
-    float x;
-    float y;
-    float z;
-    float w;
-
-    Vertex4(){
-        x = 0;
-        y = 0;
-        z = 0;
-        w=0;
-    }
-    Vertex4(float a, float b, float c){
-        x = a;
-        y = b;
-        z = c;
-        w = 1;
-    }
-
-    Vertex4(float a, float b, float c, float d){
-      x = a;
-      y = b;
-      z = c;
-      w = d;
-    }
-
-    //convert vertex3 -> vertex4
-    Vertex4(Vertex3 v , float n){
-        x = v.x;
-        y = v.y;
-        z = v.z;
-        w = n;
-    }
-};
 class RGB{
 
 public:
-   int R;
-   int G;
-   int B;
+   MGLbyte R;
+   MGLbyte G;
+   MGLbyte B;
 
     
  RGB(){
@@ -83,13 +47,22 @@ public:
       G=0;
       B=0;
    } 
-  RGB(int r, int g, int b){
+  RGB(MGLbyte r, MGLbyte g, MGLbyte b){
       R=r;
       G=g;
       B=b;
    } 
-};
 
+    RGB operator*(double s){ 
+      return RGB( MGLbyte(R*s), MGLbyte(G*s), MGLbyte(B*s) ); 
+    }
+    
+    RGB operator+(RGB r){ 
+      return RGB( MGLbyte(r.R+R), MGLbyte(r.G + G), MGLbyte(r.B + B) ); 
+    }
+
+
+};
 class Matrix4 {
 public:
   
@@ -149,15 +122,14 @@ MGLpixel SCREEN_WIDTH = 320;
 MGLpixel SCREEN_HEIGHT = 240;
 MGLpixel resolution = SCREEN_WIDTH/SCREEN_HEIGHT;
 MGLpixel screenBuffer[320][240];
-MGLpixel zBuffer[320][240];
+float zBuffer[320][240];
 RGB current_color;
+vector < RGB > colorBuffer; 
 
 string stack_status; //Projection or modelview at the current moment?
 
 stack <Matrix4> proj_stack;
 stack <Matrix4> model_stack;
-
-
 
 //out current matrix on top of the stack
 //all transformations will be applied to this matrix!
@@ -176,179 +148,144 @@ float slope(int x, int y, int x2, int y2){
 void initBuffers(){
     for(unsigned x = 0; x < SCREEN_WIDTH; x++) 
       for(unsigned y = 0; y < SCREEN_HEIGHT; ++y) 
-        zBuffer[x][y] = -9999;
+        zBuffer[x][y] = -10;
 }
 
-void set_pixel(unsigned int x, unsigned int y, RGB coloring) 
+void set_pixel(unsigned int x, unsigned int y, float z , RGB coloring) 
 { 
- 	MGLpixel color = 0; 
- 	MGL_SET_RED(color, coloring.R); 
- 	MGL_SET_GREEN(color, coloring.G); 
- 	MGL_SET_BLUE(color, coloring.B); 
-  screenBuffer[x][y] = color; //draw everything queued up on buffer
-}  
-void draw_line(int x0, int y0, int x1, int y1)
-{
-    //NOT WORKING CODE(PUT BETTER CODE HERE!!)
-    float dx = x1 - x0;
-    float dy = y1 - y0;
-    float yNext = y0;
-    float xNext = x0;
-    //vertical line
-    if( dx == 0){
-        for(int y = y0; y < y1; ++y)
-            set_pixel(x0, y, current_color );
-    }
-    float m = dy/dx;
 
-    // r Side
-    if( dx > 0 )   {
-        //quad I, m <= 1
-        //quad IV, m >= -1
-        if(  m <=  1 && m >= -1  ){
-            for(int x = x0; x < x1; ++x){
-                set_pixel(x, yNext,current_color );
-                yNext = yNext + m; // dda algotithm y_k+1 = yk + m for every x incriment
-            }
-        }
-        //quad I, m > 1
-        if( m > 1 ){
-            for(int y = y0; y < y1; ++y){
-                set_pixel(xNext, y,current_color );
-                xNext = xNext + 1/m;
-            }
-        }
-        //quad IV m < 1
-        if( m < 1){
-            for(int y = y0; y > y1; --y){
-                set_pixel(xNext, y ,current_color);
-                xNext = xNext - 1/m;
-            }
-        }
-        
-    }
-    
-    //l side
-    if( dx < 0){
-        //quad II , quad III
-        //   m > -1
-        if(  m >= -1  ){
-            for(int x = x0; x > x1; --x){
-                set_pixel(x, yNext,current_color );
-                yNext = yNext - m; // dda algotithm y_k+1 = yk + m for every x incriment
-            }
-        }
-        
-        //quad II 
-        // m < -1
-        if( dy > 0){
-            if( m < -1 ){
-                for(int y = y0; y < y1; ++y){
-                    set_pixel(xNext, y,current_color );
-                    xNext = xNext + 1/m;
-                }
-            }            
-        }
-        //quad III
-        // m > 1
-        if( dy < 0){
-            if( m > 1 ){
-                for(int y = y0; y > y1; --y){
-                    set_pixel(xNext, y,current_color );
-                    xNext = xNext - 1/m;
-                }
-            }            
-        } 
-        
-    }
-    return;
-}
+  // cout << "Zbuf:" << zBuffer[x][y] << endl;
+  // cout << "Z:" << z << endl;
+
+  if( z > zBuffer[x][y]){
+    zBuffer[x][y] = z;
+
+   	MGLpixel color = 0; 
+   	MGL_SET_RED(color, coloring.R); 
+   	MGL_SET_GREEN(color, coloring.G); 
+   	MGL_SET_BLUE(color, coloring.B); 
+    screenBuffer[x][y] = color; //draw everything queued up on buffer
+  }
+}  
+
 //from  http://www.geeksforgeeks.org/check-whether-a-given-point-lies-inside-a-triangle-or-not/
 /* A utility function to calculate area of triangle formed by (x1, y1), 
    (x2, y2) and (x3, y3) */
 
-double area(int x1, int y1, int x2, int y2, int x3, int y3)
-{
-   return abs((x1*(y2-y3) + x2*(y3-y1)+ x3*(y1-y2))/2.0);
-}
+ double f(float x, float y, float x1, float y1, float x2, float y2){
+   return ( ((y1-y2)*x) + ((x2-x1)*y) +(x1*y2)-(x2*y1));
+ }
 /* A function to check whether point P(x, y) lies inside the triangle formed 
    by A(x1, y1), B(x2, y2) and C(x3, y3) */
-bool isInsideTri(int x1, int y1, int x2, int y2, int x3, int y3, int x, int y)
+void isInsideTriColor(float x1, float y1, float z1,  float x2, float y2, float z2, float x3, float y3, float z3, int x, int y, RGB c1 , RGB c2, RGB c3)
 {   
-   /* Calculate area of triangle ABC */
-   float A = area (x1, y1, x2, y2, x3, y3);
- 
-   /* Calculate area of triangle PBC */  
-   float A1 = area (x, y, x2, y2, x3, y3);
- 
-   /* Calculate area of triangle PAC */  
-   float A2 = area (x1, y1, x, y, x3, y3);
- 
-   /* Calculate area of triangle PAB */   
-   float A3 = area (x1, y1, x2, y2, x, y);
-   
-   /* Check if sum of A1, A2 and A3 is same as A */
-   return (A == A1 + A2 + A3);
+    // if(colorBuffer.size() > 1){
+    //   cout << "more than 1 color!";
+    // }
+
+
+    //calculate baycentric coordinates
+    double v1 = f(x,y,x2,y2,x3,y3) / f(x1,y1,x2,y2,x3,y3);
+    double v2 = f(x,y,x3,y3,x1,y1) / f(x2,y2,x3,y3,x1,y1);
+    double v3 = f(x,y,x1,y1,x2,y2) / f(x3,y3,x1,y1,x2,y2);
+
+    current_color =  c1 *v1  + c2* v2 +  c3*v3;
+
+
+    //See if point must be colored
+    if(v1 >= 0 && v2 >= 0 && v3 >= 0){
+
+        float z = (z1 *v1 + z2*v2 + z3* v3) / 3;
+        set_pixel(x,y,z,current_color);
+ }
 }
+
+void isInsideTri(float x1, float y1, float z1,  float x2, float y2, float z2, float x3, float y3, float z3, int x, int y)
+{   
+
+    //calculate baycentric coordinates
+    double v1 = f(x,y,x2,y2,x3,y3) / f(x1,y1,x2,y2,x3,y3);
+    double v2 = f(x,y,x3,y3,x1,y1) / f(x2,y2,x3,y3,x1,y1);
+    double v3 = f(x,y,x1,y1,x2,y2) / f(x3,y3,x1,y1,x2,y2);
+
+    //See if point must be colored
+    if(v1 >= 0 && v2 >= 0 && v3 >= 0){
+
+        float z = (z1 *v1 + z2*v2 + z3* v3) / 3;
+        set_pixel(x,y,z,current_color);
+ }
+}
+
 
 void plotLines(){
 
-    for (int i=0; i < points_array.size(); ++i){
-      //must multiply coordinates by sceenheight , screenwidth to scale properly
-      //plot points for now -> delete later
-      set_pixel( points_array[i].x,points_array[i].y, current_color);
-    }
+    // for (int i=0; i < points_array.size(); ++i){
+    //   //must multiply coordinates by sceenheight , screenwidth to scale properly
+    //   //plot points for now -> delete later
+    //   set_pixel( points_array[i].x,points_array[i].y, current_color);
+    // }
 
 
     if( mgl_mode == MGL_TRIANGLES){
 
-      int x1 = points_array[0].x;
-      int y1 = points_array[0].y;
-      int z1 = points_array[0].z;
 
-      int x2 = points_array[1].x;
-      int y2 = points_array[1].y;
-      int z2 = points_array[1].z;
+       for(unsigned int i = 0; i < points_array.size(); i = i+3){
 
-      int x3 = points_array[2].x;
-      int y3 = points_array[2].y;
-      int z3 = points_array[2].z;
-      //check baycentric coordinates
-      for(unsigned x = 0; x < SCREEN_WIDTH; x++) {
-        for(unsigned y = 0; y < SCREEN_HEIGHT; ++y) {
-          if( isInsideTri(x1,y1,x2,y2,x3,y3,x,y) )
-            set_pixel(x,y,current_color);
+        float x1 = points_array[i].x;
+        float y1 = points_array[i].y;
+        float z1 = points_array[i].z;
+
+        float x2 = points_array[i+1].x;
+        float y2 = points_array[i+1].y;
+        float z2 = points_array[i+1].z;
+
+        float x3 = points_array[i+2].x;
+        float y3 = points_array[i+2].y;
+        float z3 = points_array[i+2].z;
+
+        RGB color_1 = colorBuffer[i];
+        RGB color_2 = colorBuffer[i+1];
+        RGB color_3 = colorBuffer[i + 2];
+
+
+        //check baycentric coordinates
+        for(unsigned x = 0; x < SCREEN_WIDTH; x++) {
+          for(unsigned y = 0; y < SCREEN_HEIGHT; ++y) {
+              isInsideTriColor(x1,y1,z1, x2,y2, z2, x3,y3, z3, x,y, color_1, color_2, color_3 ) ;
+          }
+        }
       }
-    }
-  }
-  if( mgl_mode == MGL_QUADS){
-      int x1 = points_array[0].x;
-      int y1 = points_array[0].y;
-      int z1 = points_array[0].z;
-
-      int x2 = points_array[1].x;
-      int y2 = points_array[1].y;
-      int z2 = points_array[1].z;
-
-      int x3 = points_array[2].x;
-      int y3 = points_array[2].y;
-      int z3 = points_array[2].z;
       
-      int x4 = points_array[3].x;
-      int y4 = points_array[3].y;
-      int z4 = points_array[3].z;
+  }
+
+  if( mgl_mode == MGL_QUADS){
+      float x1 = points_array[0].x;
+      float y1 = points_array[0].y;
+      float z1 = points_array[0].z;
+
+      float x2 = points_array[1].x;
+      float y2 = points_array[1].y;
+      float z2 = points_array[1].z;
+
+      float x3 = points_array[2].x;
+      float y3 = points_array[2].y;
+      float z3 = points_array[2].z;
+      
+      float x4 = points_array[3].x;
+      float y4 = points_array[3].y;
+      float z4 = points_array[3].z;
 
       //next shade in triangle!
       //check baycentric coordinates
       for(unsigned x = 0; x < SCREEN_WIDTH; x++) {
         for(unsigned y = 0; y < SCREEN_HEIGHT; ++y) {
-          if( isInsideTri(x1,y1,x2,y2,x3,y3,x,y) || isInsideTri(x1,y1,x4,y4,x3,y3,x,y)  )
-            set_pixel(x,y,current_color);
-        }
+            isInsideTri(x1,y1,z1, x2,y2, z2, x3,y3, z3, x,y ) ;
+            isInsideTri(x1,y1,z1, x4,y4, z4, x3,y3, z3, x,y ) ;
 
+        }
       }
     }
-  }
+}
 /**
  * Standard macro to report errors
  */
@@ -399,6 +336,7 @@ void mglEnd()
 
     isDrawing = false;
     points_array.clear();
+    colorBuffer.clear();
 
 }
 //load projection matrix and multiply vertex to scale it
@@ -418,15 +356,7 @@ Vertex3 convert_to_screen(MGLfloat x, MGLfloat y, MGLfloat z){
 
   //load projection matrix on t of projectional stack (gonna be orthogonal matrix or Frustum matrix)
 
-   Matrix4 proj = proj_stack.top();
-  // proj.print_matrix(); 
-  // cout << "PROJ" << endl;
-
-  // Matrix4 model = model_stack.top();
-  // model.print_matrix(); 
-  // cout << "MODEL" << endl;
-
-
+  Matrix4 proj = proj_stack.top();
   //Scale screen to 0,0 -> 2,2
   Matrix4 scaler;
   scaler.matrix4[0][0] = SCREEN_WIDTH/2; 
@@ -445,13 +375,9 @@ Vertex3 convert_to_screen(MGLfloat x, MGLfloat y, MGLfloat z){
   translater.matrix4[3][2] = 1;
   translater.matrix4[3][3] = 1;
   
-  tmp = tmp * currentMatrix;
 
-  tmp = tmp * proj;
-
-  tmp.print_matrix();
-  cout << "currentMatrix" << endl;
-
+  tmp = tmp * currentMatrix; //transfomation matrix
+  tmp = tmp * proj; //
   tmp = tmp * translater;
   tmp = tmp * scaler;
 
@@ -472,11 +398,11 @@ void mglVertex2(MGLfloat x,
 
     //Vertex3 vertex (x ,y ,0);
     points_array.push_back(vertex);
+    colorBuffer.push_back(current_color);
 
     cout << "X: " << vertex.x << " Y: " << vertex. y << " z: " << vertex.z << endl;
     cout << "# of points" << points_array.size() << endl;
 
-    //cout << "X: " << vertex.x << " Y: " << vertex. y << " z: " << vertex.z << endl;
 }
 /**
  * Specify a three-dimensional vertex.  Must appear between
@@ -548,11 +474,7 @@ void mglPopMatrix()
     if( stack_status == "modelview" ){
       currentMatrix = model_stack.top();
       model_stack.pop();
-
-
   }
-
-
 }
 
 /**
@@ -633,7 +555,6 @@ void mglTranslate(MGLfloat x,
   translater.matrix4[3][0] = x;
   translater.matrix4[3][1] = y;
   translater.matrix4[3][2] = z;
-  
   currentMatrix = currentMatrix * translater;
 }
 
@@ -745,8 +666,86 @@ void mglColor(MGLbyte red,
               MGLbyte green,
               MGLbyte blue)
 {
-
+  cout << "Color changed " << endl;
   current_color.R = red; 
   current_color.G = green; 
   current_color.B = blue;
+
 }
+
+// void draw_line(int x0, int y0, int x1, int y1)
+// {
+//     //NOT WORKING CODE(PUT BETTER CODE HERE!!)
+//     float dx = x1 - x0;
+//     float dy = y1 - y0;
+//     float yNext = y0;
+//     float xNext = x0;
+//     //vertical line
+//     if( dx == 0){
+//         for(int y = y0; y < y1; ++y)
+//             set_pixel(x0, y, current_color );
+//     }
+//     float m = dy/dx;
+
+//     // r Side
+//     if( dx > 0 )   {
+//         //quad I, m <= 1
+//         //quad IV, m >= -1
+//         if(  m <=  1 && m >= -1  ){
+//             for(int x = x0; x < x1; ++x){
+//                 set_pixel(x, yNext,current_color );
+//                 yNext = yNext + m; // dda algotithm y_k+1 = yk + m for every x incriment
+//             }
+//         }
+//         //quad I, m > 1
+//         if( m > 1 ){
+//             for(int y = y0; y < y1; ++y){
+//                 set_pixel(xNext, y,current_color );
+//                 xNext = xNext + 1/m;
+//             }
+//         }
+//         //quad IV m < 1
+//         if( m < 1){
+//             for(int y = y0; y > y1; --y){
+//                 set_pixel(xNext, y ,current_color);
+//                 xNext = xNext - 1/m;
+//             }
+//         }
+        
+//     }
+    
+//     //l side
+//     if( dx < 0){
+//         //quad II , quad III
+//         //   m > -1
+//         if(  m >= -1  ){
+//             for(int x = x0; x > x1; --x){
+//                 set_pixel(x, yNext,current_color );
+//                 yNext = yNext - m; // dda algotithm y_k+1 = yk + m for every x incriment
+//             }
+//         }
+        
+//         //quad II 
+//         // m < -1
+//         if( dy > 0){
+//             if( m < -1 ){
+//                 for(int y = y0; y < y1; ++y){
+//                     set_pixel(xNext, y,current_color );
+//                     xNext = xNext + 1/m;
+//                 }
+//             }            
+//         }
+//         //quad III
+//         // m > 1
+//         if( dy < 0){
+//             if( m > 1 ){
+//                 for(int y = y0; y > y1; --y){
+//                     set_pixel(xNext, y,current_color );
+//                     xNext = xNext - 1/m;
+//                 }
+//             }            
+//         } 
+        
+//     }
+//     return;
+// }
