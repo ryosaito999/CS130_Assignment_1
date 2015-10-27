@@ -101,7 +101,7 @@ public:
  }
 
 
-  void print_matrix(){ 
+  void print_matrix(string str){ 
     for(int y=0; y< 4; ++y){
       cout <<  endl;
       for(int x= 0 ; x <4 ; ++x){
@@ -109,7 +109,7 @@ public:
       }
     }
 
-    cout << "printed" << endl;
+    cout << endl << str << endl << endl;;
   }
 };
 
@@ -179,11 +179,6 @@ void set_pixel(unsigned int x, unsigned int y, float z , RGB coloring)
    by A(x1, y1), B(x2, y2) and C(x3, y3) */
 void isInsideTriColor(float x1, float y1, float z1,  float x2, float y2, float z2, float x3, float y3, float z3, int x, int y, RGB c1 , RGB c2, RGB c3)
 {   
-    // if(colorBuffer.size() > 1){
-    //   cout << "more than 1 color!";
-    // }
-
-
     //calculate baycentric coordinates
     double v1 = f(x,y,x2,y2,x3,y3) / f(x1,y1,x2,y2,x3,y3);
     double v2 = f(x,y,x3,y3,x1,y1) / f(x2,y2,x3,y3,x1,y1);
@@ -224,8 +219,6 @@ void plotLines(){
     //   //plot points for now -> delete later
     //   set_pixel( points_array[i].x,points_array[i].y, current_color);
     // }
-
-
     if( mgl_mode == MGL_TRIANGLES){
 
 
@@ -323,9 +316,7 @@ void mglBegin(MGLpoly_mode mode)
 {
     isDrawing = true;
     mgl_mode = mode;
-
 }
-
 /**
  * St specifying the vertices for a group of primitives.
  */
@@ -339,12 +330,6 @@ void mglEnd()
     colorBuffer.clear();
 
 }
-//load projection matrix and multiply vertex to scale it
-// void projectionMatrix(x,y,z){
-
-
-// }
-
 Vertex3 convert_to_screen(MGLfloat x, MGLfloat y, MGLfloat z){
 
   //Create a 4x4 matrix with xyz
@@ -375,13 +360,19 @@ Vertex3 convert_to_screen(MGLfloat x, MGLfloat y, MGLfloat z){
   translater.matrix4[3][2] = 1;
   translater.matrix4[3][3] = 1;
   
+  proj.print_matrix("Projection");
 
   tmp = tmp * currentMatrix; //transfomation matrix
   tmp = tmp * proj; //
   tmp = tmp * translater;
   tmp = tmp * scaler;
 
-  return Vertex3( tmp.matrix4[3][0] / tmp.matrix4[3][3] , tmp.matrix4[3][1]/tmp.matrix4[3][3] , tmp.matrix4[3][2]/tmp.matrix4[3][3] );
+  float xWidth =  tmp.matrix4[3][0] / tmp.matrix4[3][3];
+  if(xWidth > SCREEN_WIDTH){
+    xWidth = SCREEN_WIDTH;
+  }
+
+  return Vertex3( xWidth , tmp.matrix4[3][1]/tmp.matrix4[3][3] , tmp.matrix4[3][2]/tmp.matrix4[3][3] );
 
 }
 /**
@@ -414,6 +405,8 @@ void mglVertex3(MGLfloat x,
 {
     Vertex3 vertex = convert_to_screen( x , y, z);
     points_array.push_back(vertex);
+    colorBuffer.push_back(current_color);
+
     cout << "X: " << vertex.x << " Y: " << vertex. y << " z: " << vertex.z << endl;
     cout << "# of points" << points_array.size() << endl;
 }
@@ -666,7 +659,7 @@ void mglColor(MGLbyte red,
               MGLbyte green,
               MGLbyte blue)
 {
-  cout << "Color changed " << endl;
+  //cout << "Color changed " << endl;
   current_color.R = red; 
   current_color.G = green; 
   current_color.B = blue;
