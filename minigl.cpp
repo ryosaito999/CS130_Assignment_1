@@ -148,7 +148,7 @@ float slope(int x, int y, int x2, int y2){
 void initBuffers(){
     for(unsigned x = 0; x < SCREEN_WIDTH; x++) 
       for(unsigned y = 0; y < SCREEN_HEIGHT; ++y) 
-        zBuffer[x][y] = -10;
+        zBuffer[x][y] = -999.0;
 }
 
 void set_pixel(unsigned int x, unsigned int y, float z , RGB coloring) 
@@ -157,10 +157,8 @@ void set_pixel(unsigned int x, unsigned int y, float z , RGB coloring)
   // cout << "Zbuf:" << zBuffer[x][y] << endl;
   // cout << "Z:" << z << endl;
 
-  if( z > zBuffer[x][y]){
-    zBuffer[x][y] = z;
-
-   	MGLpixel color = 0; 
+  if( z >= zBuffer[x][y]){
+    zBuffer[x][y] = z;   	MGLpixel color = 0; 
    	MGL_SET_RED(color, coloring.R); 
    	MGL_SET_GREEN(color, coloring.G); 
    	MGL_SET_BLUE(color, coloring.B); 
@@ -360,7 +358,6 @@ Vertex3 convert_to_screen(MGLfloat x, MGLfloat y, MGLfloat z){
   translater.matrix4[3][2] = 1;
   translater.matrix4[3][3] = 1;
   
-  proj.print_matrix("Projection");
 
   tmp = tmp * currentMatrix; //transfomation matrix
   tmp = tmp * proj; //

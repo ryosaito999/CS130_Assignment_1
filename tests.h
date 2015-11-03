@@ -246,8 +246,8 @@ void mglTests(const int test_number)
             mglColor(0, 0, 255);
             mglBegin(MGL_QUADS);
             mglVertex2(-1.0, -1.0);
-            mglVertex2(2.0, -1.0);
-            mglVertex2(2.0, 1.0);
+            mglVertex2(1.0, -1.0);
+            mglVertex2(1.0, 1.0);
             mglVertex2(-1.0, 1.0);
             mglEnd();
 
