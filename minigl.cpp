@@ -548,7 +548,7 @@ void mglTranslate(MGLfloat x,
   translater.matrix4[3][0] = x;
   translater.matrix4[3][1] = y;
   translater.matrix4[3][2] = z;
-  currentMatrix = currentMatrix * translater;
+  currentMatrix =  translater * currentMatrix;
 }
 
 /**
