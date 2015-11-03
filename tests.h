@@ -207,7 +207,6 @@ void mglTests(const int test_number)
             mglMatrixMode(MGL_MODELVIEW);
             mglLoadIdentity();
 
-            std::cout << "pre translate" << std::endl;
             mglColor(255, 255, 255);
             mglBegin(MGL_TRIANGLES);
             mglVertex2(0.25, 0.25);
@@ -251,22 +250,17 @@ void mglTests(const int test_number)
             mglVertex2(-1.0, 1.0);
             mglEnd();
 
-            cout << endl << "Creating Triangles -------------------" << endl;
             mglPopMatrix();
 
             mglColor(255, 0, 0);
-            cout << endl << "ADDING COLOR -------------------" << endl;
 
             mglBegin(MGL_TRIANGLES);
-            cout << endl << "ADDING POINTS -------------------" << endl;
 
             mglVertex3(0.5, 0.25, 0.5);
             mglVertex3(0.75, 0.25, -0.5);
             mglVertex3(0.75, 0.75, -0.5);
-            cout << endl << "PLOTTING -------------------" << endl;
 
             mglEnd();
-            cout << endl << "FINISHED -------------------" << endl;
 
             break;
         case 4:
