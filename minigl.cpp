@@ -148,17 +148,18 @@ float slope(int x, int y, int x2, int y2){
 void initBuffers(){
     for(unsigned x = 0; x < SCREEN_WIDTH; x++) 
       for(unsigned y = 0; y < SCREEN_HEIGHT; ++y) 
-        zBuffer[x][y] = -999.0;
+        zBuffer[x][y] = 999.0;
 }
 
 void set_pixel(unsigned int x, unsigned int y, float z , RGB coloring) 
 { 
 
-  // cout << "Zbuf:" << zBuffer[x][y] << endl;
-  // cout << "Z:" << z << endl;
 
-  if( z >= zBuffer[x][y]){
-    zBuffer[x][y] = z;   	MGLpixel color = 0; 
+  if( z <= zBuffer[x][y]){
+
+    
+    zBuffer[x][y] = z;   	
+    MGLpixel color = 0; 
    	MGL_SET_RED(color, coloring.R); 
    	MGL_SET_GREEN(color, coloring.G); 
    	MGL_SET_BLUE(color, coloring.B); 
@@ -178,17 +179,16 @@ void set_pixel(unsigned int x, unsigned int y, float z , RGB coloring)
 void isInsideTriColor(float x1, float y1, float z1,  float x2, float y2, float z2, float x3, float y3, float z3, int x, int y, RGB c1 , RGB c2, RGB c3)
 {   
     //calculate baycentric coordinates
-    double v1 = f(x,y,x2,y2,x3,y3) / f(x1,y1,x2,y2,x3,y3);
-    double v2 = f(x,y,x3,y3,x1,y1) / f(x2,y2,x3,y3,x1,y1);
-    double v3 = f(x,y,x1,y1,x2,y2) / f(x3,y3,x1,y1,x2,y2);
+  double v1 = f(x,y,x2,y2,x3,y3) / f(x1,y1,x2,y2,x3,y3);
+  double v2 = f(x,y,x3,y3,x1,y1) / f(x2,y2,x3,y3,x1,y1);
+  double v3 = f(x,y,x1,y1,x2,y2) / f(x3,y3,x1,y1,x2,y2);
 
     current_color =  c1 *v1  + c2* v2 +  c3*v3;
+    float z = (z1 *v1 + z2*v2 + z3* v3) ;
 
 
     //See if point must be colored
     if(v1 >= 0 && v2 >= 0 && v3 >= 0){
-
-        float z = (z1 *v1 + z2*v2 + z3* v3) / 3;
         set_pixel(x,y,z,current_color);
  }
 }
@@ -197,14 +197,14 @@ void isInsideTri(float x1, float y1, float z1,  float x2, float y2, float z2, fl
 {   
 
     //calculate baycentric coordinates
-    double v1 = f(x,y,x2,y2,x3,y3) / f(x1,y1,x2,y2,x3,y3);
-    double v2 = f(x,y,x3,y3,x1,y1) / f(x2,y2,x3,y3,x1,y1);
-    double v3 = f(x,y,x1,y1,x2,y2) / f(x3,y3,x1,y1,x2,y2);
+  double v1 = f(x,y,x2,y2,x3,y3) / f(x1,y1,x2,y2,x3,y3);
+  double v2 = f(x,y,x3,y3,x1,y1) / f(x2,y2,x3,y3,x1,y1);
+  double v3 = f(x,y,x1,y1,x2,y2) / f(x3,y3,x1,y1,x2,y2);
 
     //See if point must be colored
     if(v1 >= 0 && v2 >= 0 && v3 >= 0){
 
-        float z = (z1 *v1 + z2*v2 + z3* v3) / 3;
+        float z = (z1 *v1 + z2*v2 + z3* v3) ;
         set_pixel(x,y,z,current_color);
  }
 }
@@ -236,7 +236,7 @@ void plotLines(){
 
         RGB color_1 = colorBuffer[i];
         RGB color_2 = colorBuffer[i+1];
-        RGB color_3 = colorBuffer[i + 2];
+        RGB color_3 = colorBuffer[i+2];
 
 
         //check baycentric coordinates
@@ -355,10 +355,10 @@ Vertex3 convert_to_screen(MGLfloat x, MGLfloat y, MGLfloat z){
   translater.matrix4[3][3] = 1;
   translater.matrix4[3][0] = 1;
   translater.matrix4[3][1] = 1;
-  translater.matrix4[3][2] = 1;
+  translater.matrix4[3][2] = 0;
   translater.matrix4[3][3] = 1;
   
-
+  currentMatrix.print_matrix("transfomation");
   tmp = tmp * currentMatrix; //transfomation matrix
   tmp = tmp * proj; //
   tmp = tmp * translater;
@@ -644,7 +644,7 @@ void mglOrtho(MGLfloat l,
   tmp.matrix4[3][3] = 1;
   tmp.matrix4[0][0] = 2/(r-l);
   tmp.matrix4[1][1] = 2/(t-b);
-  tmp.matrix4[2][2] = 2/(f-n);
+  tmp.matrix4[2][2] = -2/(f-n);
 
   currentMatrix = tmp * currentMatrix;
 }
