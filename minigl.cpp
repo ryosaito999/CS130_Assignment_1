@@ -16,7 +16,7 @@
 #include "minigl.h"
 
 using namespace std;
-class Vertex3{
+class Vertex3{ //store vertex information here!
     public:
     float x;
     float y;
@@ -53,7 +53,7 @@ public:
       B=b;
    } 
 
-    RGB operator*(double s){ 
+    RGB operator*(double s){  //needed for barcentric color fillings!
       return RGB( MGLbyte(R*s), MGLbyte(G*s), MGLbyte(B*s) ); 
     }
     
@@ -75,6 +75,8 @@ public:
         matrix4[x][y] = 0 ;
       }
   }
+
+  // = operator
   Matrix4 operator=(const Matrix4 &m){
     for(int i = 0; i < 4;i++)
       for(int j = 0; j < 4; j++)
@@ -84,6 +86,7 @@ public:
   }
   
   // taken from https://msdn.microsoft.com/en-us/library/hh873134.aspx
+  //multiply operator
   Matrix4 operator*(Matrix4 m){ 
     MGLfloat s;
     Matrix4 temp;
@@ -120,15 +123,14 @@ vector <Vertex3> points_array;
 
 MGLpixel SCREEN_WIDTH = 320;
 MGLpixel SCREEN_HEIGHT = 240;
-MGLpixel resolution = SCREEN_WIDTH/SCREEN_HEIGHT;
 MGLpixel screenBuffer[320][240];
 float zBuffer[320][240];
-RGB current_color;
-vector < RGB > colorBuffer; 
+RGB current_color; //current color of the points we are drawing
+vector < RGB > colorBuffer;  //color stack
 
 string stack_status; //Projection or modelview at the current moment?
 
-stack <Matrix4> proj_stack;
+stack <Matrix4> proj_stack; 
 stack <Matrix4> model_stack;
 
 //out current matrix on top of the stack
@@ -171,55 +173,56 @@ void set_pixel(unsigned int x, unsigned int y, float z , RGB coloring)
 /* A utility function to calculate area of triangle formed by (x1, y1), 
    (x2, y2) and (x3, y3) */
 
- double f(float x, float y, float x1, float y1, float x2, float y2){
+ double implicitEq(float x, float y, float x1, float y1, float x2, float y2){
    return ( ((y1-y2)*x) + ((x2-x1)*y) +(x1*y2)-(x2*y1));
  }
 /* A function to check whether point P(x, y) lies inside the triangle formed 
    by A(x1, y1), B(x2, y2) and C(x3, y3) */
+
+//needed for example 6 (handles shading)
 void isInsideTriColor(float x1, float y1, float z1,  float x2, float y2, float z2, float x3, float y3, float z3, int x, int y, RGB c1 , RGB c2, RGB c3)
 {   
     //calculate baycentric coordinates
-  double v1 = f(x,y,x2,y2,x3,y3) / f(x1,y1,x2,y2,x3,y3);
-  double v2 = f(x,y,x3,y3,x1,y1) / f(x2,y2,x3,y3,x1,y1);
-  double v3 = f(x,y,x1,y1,x2,y2) / f(x3,y3,x1,y1,x2,y2);
+    double alpha = implicitEq(x,y,x2,y2,x3,y3) / implicitEq(x1,y1,x2,y2,x3,y3);
+    double beta = implicitEq(x,y,x3,y3,x1,y1) / implicitEq(x2,y2,x3,y3,x1,y1);
+    double gamma = 1 - alpha - beta;
 
-    current_color =  c1 *v1  + c2* v2 +  c3*v3;
-    float z = (z1 *v1 + z2*v2 + z3* v3) ;
+    //double gamma = implicitEq(x,y,x1,y1,x2,y2) / implicitEq(x3,y3,x1,y1,x2,y2);
+
+    //find z and color info using barycentric info
+    current_color =  c1 *alpha  + c2* beta +  c3*gamma;
+    float z = (z1 *alpha + z2*beta + z3* gamma) ;
 
 
     //See if point must be colored
-    if(v1 >= 0 && v2 >= 0 && v3 >= 0){
+    if(alpha >= 0 && beta >= 0 && gamma >= 0){
         set_pixel(x,y,z,current_color);
  }
 }
 
+//basic one for single color shapes
 void isInsideTri(float x1, float y1, float z1,  float x2, float y2, float z2, float x3, float y3, float z3, int x, int y)
 {   
 
     //calculate baycentric coordinates
-  double v1 = f(x,y,x2,y2,x3,y3) / f(x1,y1,x2,y2,x3,y3);
-  double v2 = f(x,y,x3,y3,x1,y1) / f(x2,y2,x3,y3,x1,y1);
-  double v3 = f(x,y,x1,y1,x2,y2) / f(x3,y3,x1,y1,x2,y2);
+    double alpha = implicitEq(x,y,x2,y2,x3,y3) / implicitEq(x1,y1,x2,y2,x3,y3);
+    double beta = implicitEq(x,y,x3,y3,x1,y1) / implicitEq(x2,y2,x3,y3,x1,y1);
+    double gamma = 1 - alpha - beta;
 
     //See if point must be colored
-    if(v1 >= 0 && v2 >= 0 && v3 >= 0){
+    if(alpha >= 0 && beta >= 0 && gamma >= 0){
 
-        float z = (z1 *v1 + z2*v2 + z3* v3) ;
+        float z = (z1 *alpha + z2*beta + z3* gamma) ;
         set_pixel(x,y,z,current_color);
  }
 }
 
 
-void plotLines(){
+void draw(){
 
-    // for (int i=0; i < points_array.size(); ++i){
-    //   //must multiply coordinates by sceenheight , screenwidth to scale properly
-    //   //plot points for now -> delete later
-    //   set_pixel( points_array[i].x,points_array[i].y, current_color);
-    // }
     if( mgl_mode == MGL_TRIANGLES){
 
-
+        //plot every 3 points a triangle
        for(unsigned int i = 0; i < points_array.size(); i = i+3){
 
         float x1 = points_array[i].x;
@@ -249,6 +252,7 @@ void plotLines(){
       
   }
 
+  //should be in a for loop but no needd to for this assignment
   if( mgl_mode == MGL_QUADS){
       float x1 = points_array[0].x;
       float y1 = points_array[0].y;
@@ -300,7 +304,7 @@ void mglReadPixels(MGLsize width,
                    MGLsize height,
                    MGLpixel *data)
 {
-
+  // go through each pixel and set its coordinate x,y to screenBuffer color
 	for(unsigned x = 0; x < width; x++) 
  		for(unsigned y = 0; y < height; ++y) 
  			data[y*width+x] = screenBuffer[x][y]; 
@@ -320,8 +324,7 @@ void mglBegin(MGLpoly_mode mode)
  */
 void mglEnd()
 {
-    cout << points_array.size();
-    plotLines();
+    draw();
 
     isDrawing = false;
     points_array.clear();
@@ -358,7 +361,6 @@ Vertex3 convert_to_screen(MGLfloat x, MGLfloat y, MGLfloat z){
   translater.matrix4[3][2] = 0;
   translater.matrix4[3][3] = 1;
   
-  currentMatrix.print_matrix("transfomation");
   tmp = tmp * currentMatrix; //transfomation matrix
   tmp = tmp * proj; //
   tmp = tmp * translater;
@@ -389,8 +391,6 @@ void mglVertex2(MGLfloat x,
     colorBuffer.push_back(current_color);
 
     cout << "X: " << vertex.x << " Y: " << vertex. y << " z: " << vertex.z << endl;
-    cout << "# of points" << points_array.size() << endl;
-
 }
 /**
  * Specify a three-dimensional vertex.  Must appear between
@@ -405,7 +405,6 @@ void mglVertex3(MGLfloat x,
     colorBuffer.push_back(current_color);
 
     cout << "X: " << vertex.x << " Y: " << vertex. y << " z: " << vertex.z << endl;
-    cout << "# of points" << points_array.size() << endl;
 }
 
 /**
@@ -429,6 +428,20 @@ void mglMatrixMode(MGLmatrix_mode mode)
  */
 void mglPushMatrix()
 {
+
+  //how my current matrix works 
+
+    /* 
+      Current Matrix -> located outside the stack
+      
+      STACK
+      M1
+      m2
+      ...
+
+    */
+
+
   if( stack_status == "projection" )
     proj_stack.push(currentMatrix);
   
@@ -444,21 +457,14 @@ void mglPushMatrix()
  * mode.
  */
 void mglPopMatrix()
-{
-  //OHHHHHH RIGHHHHHHHHHHT
-  // Set current matrix to top of stack! Dont pop matrix!
-    cout <<  stack_status << endl;
+{  // Set current matrix to top of stack! 
     if( model_stack.empty() ||  proj_stack.empty() ){
       cout << "ERROR, no matrix available";
       exit(1);
     }
-
     if( stack_status == "projection" ){
-
        currentMatrix = proj_stack.top();
        proj_stack.pop();
-
-
     }
    
     if( stack_status == "modelview" ){
@@ -493,14 +499,10 @@ void mglLoadIdentity()
  *
  * where ai is the i'th entry of the array.
  */
+
+ //NOT USED
 void mglLoadMatrix(const MGLfloat *matrix)
-{
-   Matrix4 identityMatrix;
-   identityMatrix.matrix4[0][0] = 1;
-   identityMatrix.matrix4[1][1] = 1;
-   identityMatrix.matrix4[2][2] = 1;
-   identityMatrix.matrix4[3][3] = 1;
-}
+{}
 
 /**
  * Multiply the current matrix by an arbitrary 4x4 matrix,
@@ -514,19 +516,10 @@ void mglLoadMatrix(const MGLfloat *matrix)
  *
  * where ai is the i'th entry of the array.
  */
+
+ //not used!
 void mglMultMatrix(const MGLfloat *matrix) 
 {
-  currentMatrix;
-  Matrix4 temp;
-
-  // for( int i= 0; i <4 ; ++i){
-  //   for (int j = 0; j< 4; ++j)
-  //   {
-  //     matrix[j][i] = temp.matrix4[j][i]; 
-  //   }
-  // }
-
-  //   currentMatrix = currentMatrix * temp;
 }
 
 /**
@@ -539,7 +532,7 @@ void mglTranslate(MGLfloat x,
 {
   Matrix4 translater;
   translater.matrix4[0][0] = 1;
-  translater.matrix4[1][1] = 1;
+  translater.matrix4[1][1] = 1; //create translation matrix
   translater.matrix4[2][2] = 1;
   translater.matrix4[3][3] = 1;
   translater.matrix4[3][0] = x;
@@ -585,6 +578,7 @@ void mglRotate(MGLfloat angle,
   currentMatrix =  rotater * currentMatrix;
 
   //need to rotate around vector (x,y,z)
+  //see glRotatef on opengl docs
 }
 
 /**
@@ -656,86 +650,8 @@ void mglColor(MGLbyte red,
               MGLbyte green,
               MGLbyte blue)
 {
-  //cout << "Color changed " << endl;
-  current_color.R = red; 
-  current_color.G = green; 
+  current_color.R = red;  //set colors of current color to RGB vals
+  current_color.G = green;  
   current_color.B = blue;
 
 }
-
-// void draw_line(int x0, int y0, int x1, int y1)
-// {
-//     //NOT WORKING CODE(PUT BETTER CODE HERE!!)
-//     float dx = x1 - x0;
-//     float dy = y1 - y0;
-//     float yNext = y0;
-//     float xNext = x0;
-//     //vertical line
-//     if( dx == 0){
-//         for(int y = y0; y < y1; ++y)
-//             set_pixel(x0, y, current_color );
-//     }
-//     float m = dy/dx;
-
-//     // r Side
-//     if( dx > 0 )   {
-//         //quad I, m <= 1
-//         //quad IV, m >= -1
-//         if(  m <=  1 && m >= -1  ){
-//             for(int x = x0; x < x1; ++x){
-//                 set_pixel(x, yNext,current_color );
-//                 yNext = yNext + m; // dda algotithm y_k+1 = yk + m for every x incriment
-//             }
-//         }
-//         //quad I, m > 1
-//         if( m > 1 ){
-//             for(int y = y0; y < y1; ++y){
-//                 set_pixel(xNext, y,current_color );
-//                 xNext = xNext + 1/m;
-//             }
-//         }
-//         //quad IV m < 1
-//         if( m < 1){
-//             for(int y = y0; y > y1; --y){
-//                 set_pixel(xNext, y ,current_color);
-//                 xNext = xNext - 1/m;
-//             }
-//         }
-        
-//     }
-    
-//     //l side
-//     if( dx < 0){
-//         //quad II , quad III
-//         //   m > -1
-//         if(  m >= -1  ){
-//             for(int x = x0; x > x1; --x){
-//                 set_pixel(x, yNext,current_color );
-//                 yNext = yNext - m; // dda algotithm y_k+1 = yk + m for every x incriment
-//             }
-//         }
-        
-//         //quad II 
-//         // m < -1
-//         if( dy > 0){
-//             if( m < -1 ){
-//                 for(int y = y0; y < y1; ++y){
-//                     set_pixel(xNext, y,current_color );
-//                     xNext = xNext + 1/m;
-//                 }
-//             }            
-//         }
-//         //quad III
-//         // m > 1
-//         if( dy < 0){
-//             if( m > 1 ){
-//                 for(int y = y0; y > y1; --y){
-//                     set_pixel(xNext, y,current_color );
-//                     xNext = xNext - 1/m;
-//                 }
-//             }            
-//         } 
-        
-//     }
-//     return;
-// }
